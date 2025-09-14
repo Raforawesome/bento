@@ -4,5 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+async-trait = "0.1.89"
 axum = "0.8.4"
+serde = { version = "1.0.222", features = ["derive"] }
+thiserror = "2.0.16"
 tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread", "rt"] }
+uuid = { version = "1.18.1", features = ["serde"] }
