@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 use uuid::Uuid;
 
 /*
@@ -22,7 +23,28 @@ pub enum Role {
     User,
 }
 
-pub struct User;
+/// Main user abstraction
+pub struct User {
+    pub id: UserId,
+    pub username: Username,
+    pub pass_hash: PasswordHash,
+    pub role: Role,
+}
+
+#[derive(Debug, Error)]
+pub enum AuthError {
+    #[error("User already exists")]
+    UserExists,
+    #[error("User not found")]
+    NotFound,
+    #[error("Invalid session")]
+    InvalidSession,
+}
+
+pub trait AuthStore: Send {
+    fn create_user() -> impl Future<Output = Result<(), AuthError>> + Send;
+
+    fn get_user_by_id(&self, id: &UserId) -> impl Future<Output = Result<User, AuthError>> + Send;
 
 pub trait UserStore: Send {
     fn test() -> impl Future<Output = ()> + Send;
