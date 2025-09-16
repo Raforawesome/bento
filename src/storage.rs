@@ -1,3 +1,5 @@
+pub mod memstore;
+
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use time::OffsetDateTime;
@@ -32,7 +34,7 @@ pub enum Role {
 pub struct User {
     pub id: UserId,
     pub username: Username,
-    pub pass_hash: PasswordHash,
+    pub password_hash: PasswordHash,
     pub role: Role,
 }
 
@@ -56,7 +58,11 @@ pub struct Session {
 }
 
 pub trait AuthStore: Send + Sync {
-    fn create_user() -> impl Future<Output = Result<(), AuthError>> + Send;
+    fn create_user(
+        &self,
+        username: Username,
+        pass_hash: PasswordHash,
+    ) -> impl Future<Output = Result<User, AuthError>> + Send;
 
     fn get_user_by_id(&self, id: &UserId) -> impl Future<Output = Result<User, AuthError>> + Send;
 
@@ -88,4 +94,13 @@ pub trait AuthStore: Send + Sync {
         &self,
         token: &SessionToken,
     ) -> impl Future<Output = Result<(), AuthError>> + Send;
+}
+
+/*
+ * Implementations on newtype wrappers
+ */
+impl UserId {
+    pub fn v7() -> Self {
+        UserId(Uuid::now_v7())
+    }
 }
