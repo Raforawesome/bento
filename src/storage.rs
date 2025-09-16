@@ -48,7 +48,16 @@ pub enum AuthError {
     InvalidSession,
 }
 
-pub trait AuthStore: Send {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Session {
+    pub token: SessionToken,
+    pub user_id: UserId,
+    pub ip: SessionIp,
+    pub created_at: OffsetDateTime,
+    pub expires_at: OffsetDateTime,
+}
+
+pub trait AuthStore: Send + Sync {
     fn create_user() -> impl Future<Output = Result<(), AuthError>> + Send;
 
     fn get_user_by_id(&self, id: &UserId) -> impl Future<Output = Result<User, AuthError>> + Send;
