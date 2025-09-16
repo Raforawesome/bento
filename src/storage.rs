@@ -62,7 +62,32 @@ pub trait AuthStore: Send + Sync {
 
     fn get_user_by_id(&self, id: &UserId) -> impl Future<Output = Result<User, AuthError>> + Send;
 
-pub trait UserStore: Send {
-    fn test() -> impl Future<Output = ()> + Send;
-    fn create_user() -> impl Future<Output = User> + Send;
+    fn set_password_hash(
+        &self,
+        id: &UserId,
+        new_hash: PasswordHash,
+    ) -> impl Future<Output = Result<PasswordHash, AuthError>> + Send;
+
+    fn delete_user(&self, id: &UserId) -> impl Future<Output = Result<(), AuthError>> + Send;
+
+    fn create_session(
+        &self,
+        id: &UserId,
+        ip: SessionIp,
+    ) -> impl Future<Output = Result<Session, AuthError>> + Send;
+
+    fn fetch_session(
+        &self,
+        token: &SessionToken,
+    ) -> impl Future<Output = Result<Session, AuthError>> + Send;
+
+    fn extend_session(
+        &self,
+        token: &SessionToken,
+    ) -> impl Future<Output = Result<Session, AuthError>> + Send;
+
+    fn revoke_session(
+        &self,
+        token: &SessionToken,
+    ) -> impl Future<Output = Result<(), AuthError>> + Send;
 }
