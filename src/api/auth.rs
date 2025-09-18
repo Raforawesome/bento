@@ -1,28 +1,29 @@
+use std::sync::Arc;
+
 use axum::{
     extract::{Json, State},
-    response::Response,
+    http::StatusCode,
+    response::{IntoResponse, Response},
 };
+use axum_client_ip::ClientIp;
 use serde::{Deserialize, Serialize};
+use tracing::{debug, error};
 
-use crate::storage::{AuthStore, Role};
+use crate::storage::{
+    AuthStore, PasswordHash, Role, Session, SessionIp, SessionToken, User, UserId, Username,
+};
 
 #[derive(Debug, Deserialize)]
 pub struct AuthRequest {
-    username: String,
+    username: Username,
     password: String,
 }
 
 #[derive(Debug, Serialize)]
 pub struct AuthResponse {
-    user_id: String,
-    username: String,
-    token: String,
+    username: Username,
     role: Role,
-}
-
-#[derive(Debug, Serialize)]
-pub struct ErrorResponse {
-    error: String,
+    session: Session,
 }
 
 pub async fn register<S: AuthStore>(
