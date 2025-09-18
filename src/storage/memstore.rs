@@ -4,6 +4,7 @@ use super::{
     AuthError, AuthStore, PasswordHash, Role, Session, SessionToken, User, UserId, Username,
 };
 
+#[derive(Clone)]
 pub struct MemoryAuthStore {
     pub(self) users: HashMap<UserId, User>,
     pub(self) sessions: HashMap<SessionToken, Session>,
