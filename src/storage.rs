@@ -74,7 +74,7 @@ pub trait AuthStore: Send + Sync {
 
     fn delete_user(&self, id: &UserId) -> impl Future<Output = Result<(), AuthError>> + Send;
 
-    fn create_session(
+    fn issue_session(
         &self,
         id: &UserId,
         ip: SessionIp,
@@ -100,7 +100,7 @@ pub trait AuthStore: Send + Sync {
  * Implementations on newtype wrappers
  */
 impl UserId {
-    pub fn v7() -> Self {
+    pub fn new() -> Self {
         UserId(Uuid::now_v7())
     }
 }
