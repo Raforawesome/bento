@@ -27,7 +27,8 @@ pub struct AuthResponse {
 }
 
 pub async fn register<S: AuthStore>(
-    State(store): State<S>,
+    State(store): State<Arc<S>>,
+    ClientIp(client_ip): ClientIp,
     Json(req): Json<AuthRequest>,
 ) -> Response {
     todo!()
