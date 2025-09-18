@@ -11,6 +11,8 @@ use tracing::{debug, info};
 
 const ADDR: &str = "0.0.0.0:8000";
 
+type ConcreteAuthStore = MemoryAuthStore;
+
 #[tokio::main]
 async fn main() {
     // Setup tracing for logging
@@ -25,12 +27,21 @@ async fn main() {
 
     // Initialize the auth store
     let auth_store = MemoryAuthStore::new();
+    debug!("Authentication store initialized");
 
     // Create the router with all API routes
     let app = axum::Router::new()
         .route("/", get(async || "Welcome to Foundry BaaS!"))
         .route("/api", get(async || StatusCode::BAD_GATEWAY))
-        .with_state(auth_store);
+        .route("/api/v1", get(async || StatusCode::BAD_GATEWAY))
+        .route(
+            "/api/v1/register",
+            post(api::auth::register::<ConcreteAuthStore>),
+        )
+        .layer(RequestDecompressionLayer::new()) // decompress incoming requests
+        .layer(CompressionLayer::new()) // compress responses (auto negotaties)
+        .layer(ClientIpSource::ConnectInfo.into_extension()) // provide client ip extractors
+        .with_state(Arc::new(auth_store)); // put auth store in global state
 
     // Start the server
     info!("Binding to address: {}", ADDR);
