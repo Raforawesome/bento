@@ -16,4 +16,6 @@ thiserror = "2.0.16"
 time = { version = "0.3.43", features = ["serde"] }
 tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread", "rt"] }
 tower-http = { version = "0.6.6", features = ["compression-gzip", "compression-br", "decompression-br", "decompression-gzip"] }
+tracing = { version = "0.1.41", features = ["max_level_debug", "release_max_level_info"] }
+tracing-subscriber = "0.3.20"
 uuid = { version = "1.18.1", features = ["serde", "v7"] }
