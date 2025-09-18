@@ -1,5 +1,7 @@
 pub mod memstore;
 
+use base64::{Engine as _, engine::general_purpose::URL_SAFE as Base64Url};
+use rand::{TryRngCore, rngs::OsRng};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use time::OffsetDateTime;
@@ -8,7 +10,7 @@ use uuid::Uuid;
 /*
  * Newtype wrappers for strong typing
  */
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct UserId(pub Uuid);
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -23,7 +25,7 @@ pub struct SessionToken(pub String); // bearer
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct SessionIp(pub String);
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Role {
     Admin,
     User,
@@ -65,6 +67,11 @@ pub trait AuthStore: Send + Sync {
     ) -> impl Future<Output = Result<User, AuthError>> + Send;
 
     fn get_user_by_id(&self, id: &UserId) -> impl Future<Output = Result<User, AuthError>> + Send;
+
+    fn get_user_by_username(
+        &self,
+        username: &Username,
+    ) -> impl Future<Output = Result<User, AuthError>> + Send;
 
     fn set_password_hash(
         &self,
