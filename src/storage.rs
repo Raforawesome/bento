@@ -1,5 +1,16 @@
 pub mod memstore;
 
+use argon2::{
+    Argon2,
+    password_hash::{
+        PasswordHash as ArgonHash, PasswordHasher, PasswordVerifier, SaltString,
+        rand_core::OsRng as ArgonRng,
+    },
+};
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Response},
+};
 use base64::{Engine as _, engine::general_purpose::URL_SAFE as Base64Url};
 use rand::{TryRngCore, rngs::OsRng};
 use serde::{Deserialize, Serialize};
@@ -138,5 +149,21 @@ impl SessionToken {
         } else {
             panic!("Failed to generate secure numbers from the operating system.");
         }
+    }
+}
+
+impl AsRef<str> for Username {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl PasswordHash {
+    pub fn from<B: AsRef<[u8]>>(password: B) -> Self {
+        let pass_bytes: &[u8] = password.as_ref();
+        let salt = SaltString::generate(&mut ArgonRng);
+        let argon2 = Argon2::default();
+        let password_hash = argon2.hash_password(pass_bytes, &salt).unwrap().to_string();
+        Self(password_hash)
     }
 }
