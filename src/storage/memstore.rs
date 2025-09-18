@@ -10,6 +10,15 @@ pub struct MemoryAuthStore {
     pub(self) sessions: HashMap<SessionToken, Session>,
 }
 
+impl MemoryAuthStore {
+    pub fn new() -> Self {
+        MemoryAuthStore {
+            users: HashMap::new(),
+            sessions: HashMap::new(),
+        }
+    }
+}
+
 impl AuthStore for MemoryAuthStore {
     async fn create_user(
         &self,
