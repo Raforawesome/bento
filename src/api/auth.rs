@@ -31,7 +31,47 @@ pub async fn register<S: AuthStore>(
     ClientIp(client_ip): ClientIp,
     Json(req): Json<AuthRequest>,
 ) -> Response {
-    todo!()
+    debug!("Registration attempt from IP: {}", client_ip);
+
+    if let Ok(_) = store.get_user_by_username(&req.username).await {
+        debug!("Registration failed: username already exists");
+        StatusCode::BAD_REQUEST.into_response()
+    } else {
+        let AuthRequest { username, password } = req;
+        debug!("Creating new user");
+
+        match store
+            .create_user(username, PasswordHash::from(&password))
+            .await
+        {
+            Ok(user) => {
+                debug!(user_id = %user.id.0, "User created successfully");
+                // create token
+                debug!("Issuing session for new user");
+                match store
+                    .issue_session(&user.id, SessionIp(client_ip.to_string()))
+                    .await
+                {
+                    Ok(session) => {
+                        debug!(
+                            user_id = %user.id.0,
+                            expires_at = %session.expires_at,
+                            "Session created successfully"
+                        );
+                        (StatusCode::CREATED, Json(session)).into_response()
+                    }
+                    Err(err) => {
+                        error!(user_id = %user.id.0, error = %err, "Failed to create session");
+                        err.into_response()
+                    }
+                }
+            }
+            Err(err) => {
+                error!(?err, "Failed to create user");
+                err.into_response()
+            }
+        }
+    }
 }
 
 pub async fn login<S: AuthStore>(State(store): State<S>, Json(req): Json<AuthRequest>) -> Response {
