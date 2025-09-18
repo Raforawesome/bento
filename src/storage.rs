@@ -104,3 +104,14 @@ impl UserId {
         UserId(Uuid::now_v7())
     }
 }
+
+impl SessionToken {
+    pub fn new() -> Self {
+        let mut buf = [0_u8; 256];
+        if OsRng.try_fill_bytes(&mut buf).is_ok() {
+            SessionToken(Base64Url.encode(&buf))
+        } else {
+            panic!("Failed to generate secure numbers from the operating system.");
+        }
+    }
+}
