@@ -74,6 +74,42 @@ pub async fn register<S: AuthStore>(
     }
 }
 
-pub async fn login<S: AuthStore>(State(store): State<S>, Json(req): Json<AuthRequest>) -> Response {
-    todo!()
+pub async fn login<S: AuthStore>(
+    State(store): State<Arc<S>>,
+    ClientIp(client_ip): ClientIp,
+    Json(req): Json<AuthRequest>,
+) -> Response {
+    match store.get_user_by_username(&req.username).await {
+        Ok(user) => {
+            if user.password_hash.verify(&req.password) {
+                debug!(user_id = %user.id.0, "Password verified, issuing session");
+                match store
+                    .issue_session(&user.id, SessionIp(client_ip.to_string()))
+                    .await
+                {
+                    Ok(session) => {
+                        debug!(
+                            user_id = %user.id.0,
+                            expires_at = %session.expires_at,
+                            "Session created successfully"
+                        );
+                        let response = AuthResponse {
+                            username: user.username,
+                            role: user.role,
+                            session,
+                        };
+                        (StatusCode::OK, Json(response)).into_response()
+                    }
+                    Err(err) => {
+                        error!(user_id = %user.id.0, error = %err, "Failed to create session");
+                        err.into_response()
+                    }
+                }
+            } else {
+                debug!(user_id = %user.id.0, "Password verification failed");
+                StatusCode::UNAUTHORIZED.into_response()
+            }
+        }
+        Err(err) => err.into_response(),
+    }
 }

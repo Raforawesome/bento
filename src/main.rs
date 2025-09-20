@@ -38,6 +38,7 @@ async fn main() {
             "/api/v1/register",
             post(api::auth::register::<ConcreteAuthStore>),
         )
+        .route("/api/v1/login", post(api::auth::login::<ConcreteAuthStore>))
         .layer(RequestDecompressionLayer::new()) // decompress incoming requests
         .layer(CompressionLayer::new()) // compress responses (auto negotaties)
         .layer(ClientIpSource::ConnectInfo.into_extension()) // provide client ip extractors
