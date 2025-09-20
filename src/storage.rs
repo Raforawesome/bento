@@ -66,8 +66,8 @@ impl From<AuthError> for StatusCode {
     fn from(err: AuthError) -> Self {
         match err {
             AuthError::UserExists => StatusCode::BAD_REQUEST,
-            AuthError::NotFound => StatusCode::NOT_FOUND,
-            AuthError::InvalidSession => StatusCode::UNAUTHORIZED,
+            AuthError::NotFound => StatusCode::UNAUTHORIZED,
+            AuthError::InvalidSession => StatusCode::FORBIDDEN,
         }
     }
 }
@@ -165,5 +165,19 @@ impl PasswordHash {
         let argon2 = Argon2::default();
         let password_hash = argon2.hash_password(pass_bytes, &salt).unwrap().to_string();
         Self(password_hash)
+    }
+
+    pub fn verify<B: AsRef<[u8]>>(&self, password: B) -> bool {
+        let pass_bytes: &[u8] = password.as_ref();
+        let parsed_hash = ArgonHash::new(&self.0);
+        if parsed_hash.is_err() {
+            debug!("Failed to parse stored password hash, possible corruption?");
+            return false;
+        }
+
+        let parsed_hash = parsed_hash.unwrap();
+        Argon2::default()
+            .verify_password(pass_bytes, &parsed_hash)
+            .is_ok()
     }
 }
