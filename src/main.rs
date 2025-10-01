@@ -1,20 +1,29 @@
-use std::{net::SocketAddr, sync::Arc};
-
-use axum::{
-    http::StatusCode,
-    routing::{get, post},
-};
-use axum_client_ip::ClientIpSource;
-use foundry::{api, storage::memstore::MemoryAuthStore};
-use tower_http::{compression::CompressionLayer, decompression::RequestDecompressionLayer};
-use tracing::{debug, info};
-
-const ADDR: &str = "0.0.0.0:8000";
-
-type ConcreteAuthStore = MemoryAuthStore;
-
+#[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() {
+    /*
+     * Static code (placed here to only be compiled in server binary)
+     */
+    use std::{net::SocketAddr, sync::Arc};
+
+    use axum::{
+        http::StatusCode,
+        routing::{get, post},
+    };
+    use axum_client_ip::ClientIpSource;
+    use foundry::{api, storage::memstore::MemoryAuthStore};
+    use tower_http::{compression::CompressionLayer, decompression::RequestDecompressionLayer};
+    use tracing::{debug, info};
+    use leptos::prelude::*;
+    use leptos_axum::{generate_route_list, LeptosRoutes};
+
+    const ADDR: &str = "0.0.0.0:8000"; // local address to run webserver on
+
+    type ConcreteAuthStore = MemoryAuthStore; // declare which implementation of AuthStore to use
+    /*
+     * end static code
+     */
+
     // Setup tracing for logging
     let subscriber = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
