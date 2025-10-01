@@ -1,6 +1,6 @@
 use papaya::HashMap;
 use time::{Duration, OffsetDateTime};
-use tracing::{debug, instrument};
+use tracing::debug;
 
 use super::{
     AuthError, AuthStore, PasswordHash, Role, Session, SessionIp, SessionToken, User, UserId,
@@ -19,6 +19,12 @@ impl MemoryAuthStore {
             users: HashMap::new(),
             sessions: HashMap::new(),
         }
+    }
+}
+
+impl Default for MemoryAuthStore {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -41,7 +47,7 @@ impl AuthStore for MemoryAuthStore {
                 password_hash,
             };
             debug!(user_id = %user.id.0, "Creating new user");
-            user_map.insert(user.id.clone(), user.clone());
+            user_map.insert(user.id, user.clone());
             let result = user_map.get(&user.id);
             debug!(?result, "from map after insert");
             debug!(user_id = %user.id.0, "User created successfully");
@@ -152,18 +158,18 @@ impl AuthStore for MemoryAuthStore {
                     expires_in_secs = (session.expires_at - now).whole_seconds(),
                     "Valid session found"
                 );
-                return Ok(session.clone());
+                Ok(session.clone())
             } else {
                 debug!(
                     user_id = %session.user_id.0,
                     "Session expired, removing"
                 );
                 session_map.remove(token);
-                return Err(AuthError::InvalidSession);
+                Err(AuthError::InvalidSession)
             }
         } else {
             debug!("Session not found");
-            return Err(AuthError::InvalidSession);
+            Err(AuthError::InvalidSession)
         }
     }
 

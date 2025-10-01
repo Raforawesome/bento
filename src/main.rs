@@ -18,7 +18,7 @@ async fn main() {
     // Setup tracing for logging
     let subscriber = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
-        .with_file(true)
+        .with_file(false)
         .with_line_number(true)
         .with_target(true)
         .finish();
@@ -32,8 +32,8 @@ async fn main() {
     // Create the router with all API routes
     let app = axum::Router::new()
         .route("/", get(async || "Welcome to Foundry BaaS!"))
-        .route("/api", get(async || StatusCode::BAD_GATEWAY))
-        .route("/api/v1", get(async || StatusCode::BAD_GATEWAY))
+        .route("/api", get(async || StatusCode::SERVICE_UNAVAILABLE))
+        .route("/api/v1", get(async || StatusCode::SERVICE_UNAVAILABLE))
         .route(
             "/api/v1/register",
             post(api::auth::register::<ConcreteAuthStore>),

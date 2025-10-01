@@ -9,9 +9,7 @@ use axum_client_ip::ClientIp;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error};
 
-use crate::storage::{
-    AuthStore, PasswordHash, Role, Session, SessionIp, SessionToken, User, UserId, Username,
-};
+use crate::storage::{AuthStore, PasswordHash, Role, Session, SessionIp, Username};
 
 #[derive(Debug, Deserialize)]
 pub struct AuthRequest {
@@ -33,7 +31,7 @@ pub async fn register<S: AuthStore>(
 ) -> Response {
     debug!("Registration attempt from IP: {}", client_ip);
 
-    if let Ok(_) = store.get_user_by_username(&req.username).await {
+    if (store.get_user_by_username(&req.username).await).is_ok() {
         debug!("Registration failed: username already exists");
         StatusCode::BAD_REQUEST.into_response()
     } else {

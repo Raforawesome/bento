@@ -141,14 +141,26 @@ impl UserId {
     }
 }
 
+impl Default for UserId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SessionToken {
     pub fn new() -> Self {
         let mut buf = [0_u8; 256];
         if OsRng.try_fill_bytes(&mut buf).is_ok() {
-            SessionToken(Base64Url.encode(&buf))
+            SessionToken(Base64Url.encode(buf))
         } else {
             panic!("Failed to generate secure numbers from the operating system.");
         }
+    }
+}
+
+impl Default for SessionToken {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
