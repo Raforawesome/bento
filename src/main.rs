@@ -7,19 +7,41 @@ async fn main() {
     use std::{net::SocketAddr, sync::Arc};
 
     use axum::{
+        Router,
+        extract::FromRef,
         http::StatusCode,
         routing::{get, post},
     };
     use axum_client_ip::ClientIpSource;
     use foundry::{api, storage::memstore::MemoryAuthStore};
+    use leptos::{config::LeptosOptions, prelude::*};
+    use leptos_axum::{LeptosRoutes, generate_route_list};
     use tower_http::{compression::CompressionLayer, decompression::RequestDecompressionLayer};
     use tracing::{debug, info};
-    use leptos::prelude::*;
-    use leptos_axum::{generate_route_list, LeptosRoutes};
 
     const ADDR: &str = "0.0.0.0:8000"; // local address to run webserver on
 
     type ConcreteAuthStore = MemoryAuthStore; // declare which implementation of AuthStore to use
+
+    // Unified AppState struct
+    #[derive(Clone)]
+    pub struct AppState {
+        pub leptos_options: LeptosOptions,
+        pub auth_store: Arc<ConcreteAuthStore>,
+    }
+
+    // Axum uses FromRef impls to clone "sub-state" into routers
+    impl FromRef<AppState> for Arc<ConcreteAuthStore> {
+        fn from_ref(state: &AppState) -> Self {
+            state.auth_store.clone()
+        }
+    }
+
+    impl FromRef<AppState> for LeptosOptions {
+        fn from_ref(state: &AppState) -> Self {
+            state.leptos_options.clone()
+        }
+    }
     /*
      * end static code
      */
@@ -35,32 +57,57 @@ async fn main() {
     info!("Starting Foundry BaaS server on {}", ADDR);
 
     // Initialize the auth store
-    let auth_store = MemoryAuthStore::new();
+    let auth_store = Arc::new(MemoryAuthStore::new());
     debug!("Authentication store initialized");
 
     // Set up leptos webui
     let leptos_conf = get_configuration(None).unwrap();
+    let leptos_routes = generate_route_list(foundry::webui::App);
     let leptos_options = leptos_conf.leptos_options;
-    let routes = generate_route_list(foundry::webui::App);
 
-    // Create the router with all API routes
-    let app = axum::Router::new()
-        .route("/", get(async || "Welcome to Foundry BaaS!"))
+    let app_state = AppState {
+        leptos_options,
+        auth_store: auth_store.clone(),
+    };
+
+    // define api sub-router for the server
+    let api = Router::new()
         .route(
-            "/api/v1/register",
-            post(api::auth::register::<ConcreteAuthStore>),
+            "/v1/register",
+            post(foundry::api::auth::register::<MemoryAuthStore>),
         )
-        .route("/api/v1/login", post(api::auth::login::<ConcreteAuthStore>))
-        .fallback(async || StatusCode::NOT_FOUND)
+        .route(
+            "/v1/login",
+            post(foundry::api::auth::login::<MemoryAuthStore>),
+        );
+    // .with_state(auth_store.clone());
+
+    // define ssr'ed webui sub-router
+    let ssr: Router<LeptosOptions> = Router::new()
+        .leptos_routes(&app_state.leptos_options, leptos_routes, {
+            let leptos_options = app_state.leptos_options.clone();
+            move || foundry::webui::shell(leptos_options.clone())
+        })
+        .fallback(leptos_axum::file_and_error_handler(foundry::webui::shell));
+
+    let ssr_service = ssr.into_service();
+
+    // Unify both sub-routers under one
+    let app: Router<AppState> = Router::new()
+        .with_state(AppState {
+            auth_store,
+            leptos_options,
+        })
+        .nest("/api", api)
+        .nest_service("/", ssr_service)
         .layer(
             RequestDecompressionLayer::new()
                 .br(true)
                 .gzip(true)
                 .pass_through_unaccepted(false),
-        ) // decompress incoming requests
-        .layer(CompressionLayer::new()) // compress responses (auto negotiates)
-        .layer(ClientIpSource::ConnectInfo.into_extension()) // provide client ip extractors
-        .with_state(Arc::new(auth_store)); // put auth store in global state
+        )
+        .layer(CompressionLayer::new())
+        .layer(ClientIpSource::ConnectInfo.into_extension());
 
     // Start the server
     info!("Binding to address: {}", ADDR);
