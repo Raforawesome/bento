@@ -80,17 +80,20 @@ async fn main() {
             "/api/v1/login",
             post(foundry::api::auth::login::<ConcreteAuthStore>),
         );
-    // .with_state(auth_store.clone());
 
     // define ssr'ed webui sub-router
-    let ssr: Router<LeptosOptions> = Router::new()
-        .leptos_routes(&app_state.leptos_options, leptos_routes, {
-            let leptos_options = app_state.leptos_options.clone();
-            move || foundry::webui::shell(leptos_options.clone())
-        })
-        .fallback(leptos_axum::file_and_error_handler(foundry::webui::shell));
-
-    let ssr_service = ssr.into_service();
+    let ssr = Router::new().leptos_routes_with_context(
+        &app_state,
+        leptos_routes,
+        {
+            let app_state = app_state.clone();
+            move || provide_context(app_state.clone())
+        },
+        {
+            let opts = app_state.clone();
+            move || foundry::webui::shell(opts.leptos_options.clone())
+        },
+    );
 
     // Unify both sub-routers under one
     let app = Router::new()
@@ -102,8 +105,9 @@ async fn main() {
                 .gzip(true)
                 .pass_through_unaccepted(false),
         )
-        .layer(CompressionLayer::new())
-        .layer(ClientIpSource::ConnectInfo.into_extension());
+        .layer(CompressionLayer::new().br(true).gzip(true))
+        .layer(ClientIpSource::ConnectInfo.into_extension())
+        .with_state(app_state);
 
     // Start the server
     info!("Binding to address: {}", ADDR);
