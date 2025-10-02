@@ -73,12 +73,12 @@ async fn main() {
     // define api sub-router for the server
     let api = Router::new()
         .route(
-            "/v1/register",
-            post(foundry::api::auth::register::<MemoryAuthStore>),
+            "/api/v1/register",
+            post(foundry::api::auth::register::<ConcreteAuthStore>),
         )
         .route(
-            "/v1/login",
-            post(foundry::api::auth::login::<MemoryAuthStore>),
+            "/api/v1/login",
+            post(foundry::api::auth::login::<ConcreteAuthStore>),
         );
     // .with_state(auth_store.clone());
 
@@ -93,13 +93,9 @@ async fn main() {
     let ssr_service = ssr.into_service();
 
     // Unify both sub-routers under one
-    let app: Router<AppState> = Router::new()
-        .with_state(AppState {
-            auth_store,
-            leptos_options,
-        })
-        .nest("/api", api)
-        .nest_service("/", ssr_service)
+    let app = Router::new()
+        .merge(api)
+        .merge(ssr)
         .layer(
             RequestDecompressionLayer::new()
                 .br(true)
