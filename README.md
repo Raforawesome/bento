@@ -26,8 +26,8 @@ The combination of Axum's routing system and Tokio's runtime provides excellent 
 ## Getting Started
 
 ```sh
-# Run the server
-cargo run
+# Run the server (SSR)
+cargo run --features ssr
 
 # Server will start on 0.0.0.0:8000
 ```
