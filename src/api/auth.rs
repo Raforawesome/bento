@@ -9,7 +9,7 @@ use axum_client_ip::ClientIp;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error};
 
-use crate::storage::{AuthStore, PasswordHash, Role, Session, SessionIp, Username};
+use crate::storage::{AuthError, AuthStore, PasswordHash, Role, Session, SessionIp, Username};
 
 #[derive(Debug, Deserialize)]
 pub struct AuthRequest {
@@ -22,6 +22,23 @@ pub struct AuthResponse {
     username: Username,
     role: Role,
     session: Session,
+}
+
+impl IntoResponse for AuthError {
+    fn into_response(self) -> Response {
+        let status: StatusCode = self.into();
+        status.into_response()
+    }
+}
+
+impl From<AuthError> for StatusCode {
+    fn from(err: AuthError) -> Self {
+        match err {
+            AuthError::UserExists => StatusCode::BAD_REQUEST,
+            AuthError::NotFound => StatusCode::UNAUTHORIZED,
+            AuthError::InvalidSession => StatusCode::FORBIDDEN,
+        }
+    }
 }
 
 pub async fn register<S: AuthStore>(

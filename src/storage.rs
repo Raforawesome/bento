@@ -7,10 +7,6 @@ use argon2::{
         rand_core::OsRng as ArgonRng,
     },
 };
-use axum::{
-    http::StatusCode,
-    response::{IntoResponse, Response},
-};
 use base64::{Engine as _, engine::general_purpose::URL_SAFE as Base64Url};
 use rand::{TryRngCore, rngs::OsRng};
 use serde::{Deserialize, Serialize};
@@ -60,23 +56,6 @@ pub enum AuthError {
     NotFound,
     #[error("Invalid session")]
     InvalidSession,
-}
-
-impl From<AuthError> for StatusCode {
-    fn from(err: AuthError) -> Self {
-        match err {
-            AuthError::UserExists => StatusCode::BAD_REQUEST,
-            AuthError::NotFound => StatusCode::UNAUTHORIZED,
-            AuthError::InvalidSession => StatusCode::FORBIDDEN,
-        }
-    }
-}
-
-impl IntoResponse for AuthError {
-    fn into_response(self) -> Response {
-        let status_code: StatusCode = self.into();
-        status_code.into_response()
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
