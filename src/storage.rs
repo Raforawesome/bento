@@ -128,7 +128,7 @@ impl Default for UserId {
 
 impl SessionToken {
     pub fn new() -> Self {
-        let mut buf = [0_u8; 256];
+        let mut buf = [0_u8; 120];
         if OsRng.try_fill_bytes(&mut buf).is_ok() {
             SessionToken(Base64Url.encode(buf))
         } else {
