@@ -73,7 +73,12 @@ pub async fn register<S: AuthStore>(
                             expires_at = %session.expires_at,
                             "Session created successfully"
                         );
-                        (StatusCode::CREATED, Json(session)).into_response()
+                        let response = AuthResponse {
+                            username: user.username.clone(),
+                            role: user.role,
+                            session,
+                        };
+                        (StatusCode::CREATED, Json(response)).into_response()
                     }
                     Err(err) => {
                         error!(user_id = %user.id.0, error = %err, "Failed to create session");
