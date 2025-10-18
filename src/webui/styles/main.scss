@@ -1,0 +1,18 @@
+@use "vars";
+
+:root {
+    color-scheme: dark;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    /* background: vars.$bg-0; */
+    /* color: vars.$text-0; */
+    font-family: vars.$font-list;
+}
