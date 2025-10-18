@@ -8,7 +8,7 @@ async fn main() {
 
     use axum::{Router, extract::FromRef, routing::post};
     use axum_client_ip::ClientIpSource;
-    use foundry::{storage::memstore::MemoryAuthStore, webui};
+    use bento::{storage::memstore::MemoryAuthStore, webui};
     use leptos::{config::LeptosOptions, prelude::*};
     use leptos_axum::{LeptosRoutes, file_and_error_handler, generate_route_list};
     use tower_http::{compression::CompressionLayer, decompression::RequestDecompressionLayer};
@@ -49,7 +49,7 @@ async fn main() {
         .with_target(true)
         .finish();
     tracing::subscriber::set_global_default(subscriber).expect("Failed to set tracing subscriber");
-    info!("Starting Foundry BaaS server on {}", ADDR);
+    info!("Starting Bento BaaS server on {}", ADDR);
 
     // Initialize the auth store
     let auth_store = Arc::new(MemoryAuthStore::new());
@@ -69,11 +69,11 @@ async fn main() {
     let api = Router::new()
         .route(
             "/api/v1/register",
-            post(foundry::api::auth::register::<ConcreteAuthStore>),
+            post(bento::api::auth::register::<ConcreteAuthStore>),
         )
         .route(
             "/api/v1/login",
-            post(foundry::api::auth::login::<ConcreteAuthStore>),
+            post(bento::api::auth::login::<ConcreteAuthStore>),
         );
 
     // define ssr'ed webui sub-router

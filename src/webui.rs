@@ -39,7 +39,7 @@ pub fn App() -> impl IntoView {
     view! {
         // injects a stylesheet into the document <head>
         // id=leptos means cargo-leptos will hot-reload this stylesheet
-        <Stylesheet id="leptos" href="/pkg/foundry.css" />
+        <Stylesheet id="leptos" href="/pkg/bento.css" />
 
         // sets the document title
         <Title text="Welcome to Leptos" />
@@ -62,8 +62,8 @@ pub fn TopBar() -> impl IntoView {
     view! {
         <div class="navbar bg-base-100 shadow-sm px-6">
             <div class="navbar-start gap-6">
-                <img class="text-left" src="/cauldron-dark.webp" width=36 />
-                <h1 class="text-xl font-bold">Foundry</h1>
+                <img class="text-left" src="/bento-dark-64.webp" width=36 />
+                <h1 class="text-xl font-bold">Bento</h1>
             </div>
             <div class="navbar-end gap-6">
                 <a class="link link-hover" href="#">Documentation</a>

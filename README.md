@@ -1,10 +1,10 @@
-# Foundry
+# Bento
 
 A lightweight, secure authentication backend as a service (BaaS) built with Rust.
 
 ## Overview
 
-Foundry provides a robust API for user authentication, database features, file storage, and message passing. It's designed to be integrated into your application stack with minimal setup, offering secure authentication primitives out of the box.
+Bento provides a robust API for user authentication, database features, file storage, and message passing. It's designed to be integrated into your application stack with minimal setup, offering secure authentication primitives out of the box.
 
 ## Key Features
 
@@ -17,7 +17,7 @@ Foundry provides a robust API for user authentication, database features, file s
 
 ## Why Rust?
 
-Foundry leverages Rust's unique advantages to deliver a service that is:
+Bento leverages Rust's unique advantages to deliver a service that is:
 
 - **Memory Safe**: Built on Rust's ownership model to eliminate common security vulnerabilities
 - **Concurrency Without Overhead**: Uses async/await with Tokio for efficient handling of concurrent requests
@@ -42,4 +42,4 @@ cargo leptos watch
 - `POST /api/v1/login` - Authenticate and receive a session token
 
 ## Storage Options
-Foundry currently supports an in-memory authentication store with thread-safe public methods. Database integrations are planned for future releases.
+Bento currently supports an in-memory authentication store with thread-safe public methods. Database integrations are planned for future releases.

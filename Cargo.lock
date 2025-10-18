@@ -257,6 +257,33 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "55248b47b0caf0546f7988906588779981c43bb1bc9d0c44087278f80cdb44ba"
 
 [[package]]
+name = "bento"
+version = "0.1.0"
+dependencies = [
+ "argon2",
+ "axum",
+ "axum-client-ip",
+ "base64",
+ "console_error_panic_hook",
+ "leptos",
+ "leptos_axum",
+ "leptos_meta",
+ "leptos_router",
+ "lucide-leptos",
+ "papaya",
+ "rand",
+ "serde",
+ "thiserror 2.0.16",
+ "time",
+ "tokio",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "bitflags"
 version = "2.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -635,33 +662,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cb4cb245038516f5f85277875cdaa4f7d2c9a0fa0468de06ed190163b1581fcf"
 dependencies = [
  "percent-encoding",
-]
-
-[[package]]
-name = "foundry"
-version = "0.1.0"
-dependencies = [
- "argon2",
- "axum",
- "axum-client-ip",
- "base64",
- "console_error_panic_hook",
- "leptos",
- "leptos_axum",
- "leptos_meta",
- "leptos_router",
- "lucide-leptos",
- "papaya",
- "rand",
- "serde",
- "thiserror 2.0.16",
- "time",
- "tokio",
- "tower-http",
- "tracing",
- "tracing-subscriber",
- "uuid",
- "wasm-bindgen",
 ]
 
 [[package]]
