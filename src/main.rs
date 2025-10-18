@@ -6,16 +6,11 @@ async fn main() {
      */
     use std::{net::SocketAddr, sync::Arc};
 
-    use axum::{
-        Router,
-        extract::FromRef,
-        http::StatusCode,
-        routing::{get, post},
-    };
+    use axum::{Router, extract::FromRef, routing::post};
     use axum_client_ip::ClientIpSource;
-    use foundry::{api, storage::memstore::MemoryAuthStore};
+    use foundry::{storage::memstore::MemoryAuthStore, webui};
     use leptos::{config::LeptosOptions, prelude::*};
-    use leptos_axum::{LeptosRoutes, generate_route_list};
+    use leptos_axum::{LeptosRoutes, file_and_error_handler, generate_route_list};
     use tower_http::{compression::CompressionLayer, decompression::RequestDecompressionLayer};
     use tracing::{debug, info};
 
@@ -62,7 +57,7 @@ async fn main() {
 
     // Set up leptos webui
     let leptos_conf = get_configuration(None).unwrap();
-    let leptos_routes = generate_route_list(foundry::webui::App);
+    let leptos_routes = generate_route_list(webui::App);
     let leptos_options = leptos_conf.leptos_options;
 
     let app_state = AppState {
@@ -91,23 +86,19 @@ async fn main() {
         },
         {
             let opts = app_state.clone();
-            move || foundry::webui::shell(opts.leptos_options.clone())
+            move || webui::shell(opts.leptos_options.clone())
         },
     );
 
     // Unify both sub-routers under one
-    let app = Router::new()
+    let app: Router = Router::new()
         .merge(api)
         .merge(ssr)
-        .layer(
-            RequestDecompressionLayer::new()
-                .br(true)
-                .gzip(true)
-                .pass_through_unaccepted(false),
-        )
+        .fallback(file_and_error_handler::<AppState, _>(webui::shell)) // fallback for static files & 404s
+        .layer(RequestDecompressionLayer::new().br(true).gzip(true))
         .layer(CompressionLayer::new().br(true).gzip(true))
-        .layer(ClientIpSource::ConnectInfo.into_extension())
-        .with_state(app_state);
+        .with_state(app_state)
+        .layer(ClientIpSource::ConnectInfo.into_extension());
 
     // Start the server
     info!("Binding to address: {}", ADDR);
