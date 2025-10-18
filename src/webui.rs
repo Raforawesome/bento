@@ -1,8 +1,13 @@
+pub mod home;
+
+use home::Home;
+
 use leptos::prelude::*;
 use leptos_meta::{MetaTags, Stylesheet, Title, provide_meta_context};
 use leptos_router::{
     StaticSegment,
-    components::{Route, Router, Routes},
+    components::{ParentRoute, Route, Router, Routes},
+    path,
 };
 use lucide_leptos::Bell;
 
@@ -34,16 +39,18 @@ pub fn App() -> impl IntoView {
     view! {
         // injects a stylesheet into the document <head>
         // id=leptos means cargo-leptos will hot-reload this stylesheet
-        <Stylesheet id="leptos" href="/pkg/app.css"/>
+        <Stylesheet id="leptos" href="/pkg/foundry.css" />
 
         // sets the document title
-        <Title text="Welcome to Leptos"/>
+        <Title text="Welcome to Leptos" />
 
         // content for this welcome page
         <Router>
             <main>
                 <Routes fallback=|| "Page not found.".into_view()>
-                    <Route path=StaticSegment("/") view=Home/>
+                    <ParentRoute path=path!("") view=TopBar>
+                        <Route path=StaticSegment("/") view=Home />
+                    </ParentRoute>
                 </Routes>
             </main>
         </Router>
@@ -51,8 +58,18 @@ pub fn App() -> impl IntoView {
 }
 
 #[component]
-pub fn Home() -> impl IntoView {
+pub fn TopBar() -> impl IntoView {
     view! {
-        <h1>Hello, world</h1>
+        <div class="navbar bg-base-100 shadow-sm px-6">
+            <div class="navbar-start gap-6">
+                <img class="text-left" src="/cauldron-dark.webp" width=36 />
+                <h1 class="text-xl font-bold">Foundry</h1>
+            </div>
+            <div class="navbar-end gap-6">
+                <a class="link link-hover" href="#">Documentation</a>
+                <Bell />
+                <a class="link link-hover" href="#">Logout</a>
+            </div>
+        </div>
     }
 }
