@@ -9,10 +9,12 @@ use lucide_leptos::Bell;
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
         <!DOCTYPE html>
-        <html lang="en">
+        <html lang="en" data-theme="dark">
             <head>
                 <meta charset="utf-8"/>
                 <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+                <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
                 <AutoReload options=options.clone() />
                 <HydrationScripts options/>
                 <MetaTags/>
