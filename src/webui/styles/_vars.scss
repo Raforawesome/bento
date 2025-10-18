@@ -1,0 +1,43 @@
+// Color tokens (dark theme)
+$bg-0: #0b1220; // page background
+$bg-1: #0f172a; // surfaces
+$bg-2: #111827; // elevated
+$text-0: #e5e7eb; // primary text
+$text-1: #94a3b8; // secondary text
+$text-2: #64748b; // dim text
+
+$accent: #1e90ff; // primary accent
+$accent-2: #2563eb;
+
+$success: #22c55e;
+$danger: #ef4444;
+$warning: #f59e0b;
+
+$card-radius: 16px;
+$button-radius: 10px;
+$shadow-1: 0 4px 14px rgba(0, 0, 0, 0.25);
+
+$space-1: 4px;
+$space-2: 8px;
+$space-3: 12px;
+$space-4: 16px;
+$space-5: 20px;
+$space-6: 24px;
+$space-8: 32px;
+$space-10: 40px;
+
+$font-list:
+    "Inter",
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Ubuntu,
+    Cantarell,
+    Noto Sans,
+    Helvetica,
+    Arial,
+    "Apple Color Emoji",
+    "Segoe UI Emoji";
+
+$border: 1px solid rgba(255, 255, 255, 0.06);
