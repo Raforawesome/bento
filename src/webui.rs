@@ -4,6 +4,7 @@ use leptos_router::{
     StaticSegment,
     components::{Route, Router, Routes},
 };
+use lucide_leptos::Bell;
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
