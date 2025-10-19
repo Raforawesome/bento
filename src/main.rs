@@ -18,6 +18,7 @@ async fn main() {
     use tracing::{debug, info};
 
     const ADDR: &str = "0.0.0.0:8000"; // local address to run webserver on
+    const MAX_SESSIONS_PER_USER: usize = 5;
 
     type ConcreteAuthStore = MemoryAuthStore; // declare which implementation of AuthStore to use
 
@@ -55,7 +56,7 @@ async fn main() {
     info!("Starting Bento BaaS server on {}", ADDR);
 
     // Initialize the auth store
-    let auth_store = Arc::new(MemoryAuthStore::new());
+    let auth_store = Arc::new(MemoryAuthStore::new(MAX_SESSIONS_PER_USER));
     debug!("Authentication store initialized");
 
     // Set up leptos webui

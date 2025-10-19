@@ -11,24 +11,34 @@ use super::{
 pub struct MemoryAuthStore {
     pub(self) users: HashMap<UserId, User>,
     pub(self) sessions: HashMap<SessionToken, Session>,
+    pub(self) max_sessions_per_user: usize,
 }
 
 impl MemoryAuthStore {
-    pub fn new() -> Self {
+    pub fn new(max_sessions_per_user: usize) -> Self {
         MemoryAuthStore {
             users: HashMap::new(),
             sessions: HashMap::new(),
+            max_sessions_per_user,
         }
+    }
+
+    pub fn new_unbounded() -> Self {
+        Self::new(usize::MAX)
     }
 }
 
 impl Default for MemoryAuthStore {
     fn default() -> Self {
-        Self::new()
+        Self::new(usize::MAX)
     }
 }
 
 impl AuthStore for MemoryAuthStore {
+    fn max_sessions_per_user(&self) -> usize {
+        self.max_sessions_per_user
+    }
+
     async fn create_user(
         &self,
         username: Username,
@@ -127,6 +137,24 @@ impl AuthStore for MemoryAuthStore {
         let now = OffsetDateTime::now_utc();
         let expires = now + Duration::hours(1);
 
+        let session_map = self.sessions.pin();
+
+        if self.max_sessions_per_user != usize::MAX {
+            let active_sessions = session_map
+                .values()
+                .filter(|session| session.user_id == *id && session.expires_at > now)
+                .count();
+
+            if active_sessions >= self.max_sessions_per_user {
+                debug!(
+                    user_id = %id.0,
+                    max = self.max_sessions_per_user,
+                    "Session limit reached"
+                );
+                return Err(AuthError::SessionLimitReached);
+            }
+        }
+
         let session = Session {
             token: SessionToken::new(),
             user_id: *id,
@@ -135,7 +163,6 @@ impl AuthStore for MemoryAuthStore {
             expires_at: expires,
         };
 
-        let session_map = self.sessions.pin();
         session_map.insert(session.token.clone(), session.clone());
         debug!(
             user_id = %id.0,
@@ -211,5 +238,37 @@ impl AuthStore for MemoryAuthStore {
             debug!("Session not found for revocation");
             Err(AuthError::InvalidSession)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn enforces_session_limit() {
+        let store = MemoryAuthStore::new(1);
+        let user_id = UserId::new();
+        let ip = SessionIp("127.0.0.1".to_string());
+
+        let first = store
+            .issue_session(&user_id, ip.clone())
+            .await
+            .expect("first session should succeed");
+
+        match store.issue_session(&user_id, ip.clone()).await {
+            Err(AuthError::SessionLimitReached) => {}
+            other => panic!("expected session limit error, got {other:?}"),
+        }
+
+        store
+            .revoke_session(&first.token)
+            .await
+            .expect("revocation should succeed");
+
+        store
+            .issue_session(&user_id, ip)
+            .await
+            .expect("session after revocation should succeed");
     }
 }

@@ -56,6 +56,8 @@ pub enum AuthError {
     NotFound,
     #[error("Invalid session")]
     InvalidSession,
+    #[error("Maximum active sessions reached")]
+    SessionLimitReached,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -68,6 +70,8 @@ pub struct Session {
 }
 
 pub trait AuthStore: Send + Sync {
+    fn max_sessions_per_user(&self) -> usize;
+
     fn create_user(
         &self,
         username: Username,
