@@ -61,16 +61,19 @@ pub fn App() -> impl IntoView {
 #[component]
 pub fn TopBar() -> impl IntoView {
     view! {
-        <div class="navbar bg-base-100 shadow-sm px-6">
+        <div class="navbar bg-base-100 px-6">
             <div class="navbar-start gap-6">
                 <img class="text-left" src="/bento-dark-64.webp" width=36 />
                 <h1 class="text-xl font-bold">Bento</h1>
             </div>
             <div class="navbar-end gap-6">
                 <a class="link link-hover" href="#">Documentation</a>
-                <Bell />
+                <button class="btn btn-ghost" on:click=|_| println!("clicked!")>
+                    <Bell />
+                </button>
                 <a class="link link-hover" href="#">Logout</a>
             </div>
         </div>
+        <hr class="border-white/15" />
     }
 }
