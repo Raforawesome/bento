@@ -1,4 +1,4 @@
-#[cfg(feature = "ssr")]
+#[cfg(all(feature = "ssr", feature = "rest-api"))]
 pub mod api;
 #[cfg(feature = "ssr")]
 pub mod storage;

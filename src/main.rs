@@ -6,7 +6,10 @@ async fn main() {
      */
     use std::{net::SocketAddr, sync::Arc};
 
-    use axum::{Router, extract::FromRef, routing::post};
+    #[cfg(feature = "rest-api")]
+    use axum::routing::post;
+    use axum::{Router, extract::FromRef};
+    #[cfg(feature = "rest-api")]
     use axum_client_ip::ClientIpSource;
     use bento::{storage::memstore::MemoryAuthStore, webui};
     use leptos::{config::LeptosOptions, prelude::*};
@@ -66,6 +69,7 @@ async fn main() {
     };
 
     // define api sub-router for the server
+    #[cfg(feature = "rest-api")]
     let api = Router::new()
         .route(
             "/api/v1/register",
@@ -91,6 +95,7 @@ async fn main() {
     );
 
     // Unify both sub-routers under one
+    #[cfg(feature = "rest-api")]
     let app: Router = Router::new()
         .merge(api)
         .merge(ssr)
@@ -99,6 +104,14 @@ async fn main() {
         .layer(CompressionLayer::new().br(true).gzip(true))
         .with_state(app_state)
         .layer(ClientIpSource::ConnectInfo.into_extension());
+
+    #[cfg(not(feature = "rest-api"))]
+    let app: Router = Router::new()
+        .merge(ssr)
+        .fallback(file_and_error_handler::<AppState, _>(webui::shell)) // fallback for static files & 404s
+        .layer(RequestDecompressionLayer::new().br(true).gzip(true))
+        .layer(CompressionLayer::new().br(true).gzip(true))
+        .with_state(app_state);
 
     // Start the server
     info!("Binding to address: {}", ADDR);
