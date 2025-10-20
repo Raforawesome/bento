@@ -43,17 +43,14 @@ pub fn App() -> impl IntoView {
         <Stylesheet id="leptos" href="/pkg/bento.css" />
 
         // sets the document title
-        <Title text="Welcome to Leptos" />
+        <Title text="Bento: Backend Toolbox" />
 
-        // content for this welcome page
         <Router>
-            <main>
-                <Routes fallback=|| "Page not found.".into_view()>
-                    <ParentRoute path=path!("") view=TopBar>
-                        <Route path=StaticSegment("/") view=Home />
-                    </ParentRoute>
-                </Routes>
-            </main>
+            <Routes fallback=|| "Page not found.".into_view()>
+                <ParentRoute path=path!("") view=TopBar>
+                    <Route path=StaticSegment("/") view=Home />
+                </ParentRoute>
+            </Routes>
         </Router>
     }
 }
