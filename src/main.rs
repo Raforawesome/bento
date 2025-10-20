@@ -6,13 +6,14 @@ async fn main() {
      */
     use std::{net::SocketAddr, sync::Arc};
 
+    use axum::Router;
     #[cfg(feature = "rest-api")]
     use axum::routing::post;
-    use axum::{Router, extract::FromRef};
     #[cfg(feature = "rest-api")]
     use axum_client_ip::ClientIpSource;
+    use bento::server::{AppState, ConcreteAuthStore};
     use bento::{storage::memstore::MemoryAuthStore, webui};
-    use leptos::{config::LeptosOptions, prelude::*};
+    use leptos::prelude::*;
     use leptos_axum::{LeptosRoutes, file_and_error_handler, generate_route_list};
     use tower_http::{compression::CompressionLayer, decompression::RequestDecompressionLayer};
     use tracing::{debug, info};
@@ -20,27 +21,6 @@ async fn main() {
     const ADDR: &str = "0.0.0.0:8000"; // local address to run webserver on
     const MAX_SESSIONS_PER_USER: usize = 5;
 
-    type ConcreteAuthStore = MemoryAuthStore; // declare which implementation of AuthStore to use
-
-    // Unified AppState struct
-    #[derive(Clone)]
-    pub struct AppState {
-        pub leptos_options: LeptosOptions,
-        pub auth_store: Arc<ConcreteAuthStore>,
-    }
-
-    // Axum uses FromRef impls to clone "sub-state" into routers
-    impl FromRef<AppState> for Arc<ConcreteAuthStore> {
-        fn from_ref(state: &AppState) -> Self {
-            state.auth_store.clone()
-        }
-    }
-
-    impl FromRef<AppState> for LeptosOptions {
-        fn from_ref(state: &AppState) -> Self {
-            state.leptos_options.clone()
-        }
-    }
     /*
      * end static code
      */
