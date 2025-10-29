@@ -28,7 +28,7 @@ pub fn LoginScreen() -> impl IntoView {
                     <div class="card bg-base-100 shadow-xl">
                         <div class="card-body space-y-4">
                             <label class="form-control w-full">
-                                <span class="label-text font-medium">"Username"</span>
+                                <span class="label-text font-medium px-1">"Username"</span>
                                 <input
                                     class="input input-bordered w-full"
                                     type="text"
@@ -36,12 +36,12 @@ pub fn LoginScreen() -> impl IntoView {
                                     required
                                     minlength="3"
                                     autocomplete="username"
-                                    placeholder="your-username"
+                                    placeholder="Username"
                                 />
                             </label>
 
                             <label class="form-control w-full">
-                                <span class="label-text font-medium">"Password"</span>
+                                <span class="label-text font-medium px-1">"Password"</span>
                                 <input
                                     class="input input-bordered w-full"
                                     type="password"
