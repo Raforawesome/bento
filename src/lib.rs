@@ -32,6 +32,8 @@ pub mod server {
 #[cfg(all(feature = "ssr", feature = "rest-api"))]
 pub mod api;
 #[cfg(feature = "ssr")]
+pub mod config;
+#[cfg(feature = "ssr")]
 pub mod storage;
 
 pub mod webui;

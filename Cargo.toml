@@ -22,7 +22,8 @@ rand = { version = "0.9.2", features = ["os_rng"], optional = true }
 serde = { version = "1.0.222", features = ["derive"], optional = true }
 thiserror = { version = "2.0.16", optional = true }
 time = { version = "0.3.43", features = ["serde"], optional = true }
-tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread", "rt"], optional = true }
+tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread", "rt", "time"], optional = true }
+toml = { version = "0.9.8", optional = true }
 tower-http = { version = "0.6.6", features = ["compression-gzip", "compression-br", "decompression-br", "decompression-gzip"], optional = true }
 tracing = { version = "0.1.41", features = ["max_level_debug", "release_max_level_info"], optional = true }
 tracing-subscriber = { version = "0.3.20", optional = true }
@@ -49,6 +50,7 @@ ssr = [
     "dep:uuid",
     "dep:axum",
     "dep:tokio",
+    "dep:toml",
     "dep:leptos_axum",
     "leptos/ssr",
     "leptos_meta/ssr",
