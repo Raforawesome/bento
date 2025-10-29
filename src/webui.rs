@@ -1,16 +1,17 @@
 pub mod home;
-pub mod login;
+pub mod login_screen;
 
 use home::Home;
 
 use leptos::prelude::*;
 use leptos_meta::{MetaTags, Stylesheet, Title, provide_meta_context};
 use leptos_router::{
-    StaticSegment,
     components::{ParentRoute, Route, Router, Routes},
     path,
 };
 use lucide_leptos::Bell;
+
+use crate::webui::login_screen::LoginScreen;
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
@@ -48,8 +49,9 @@ pub fn App() -> impl IntoView {
 
         <Router>
             <Routes fallback=|| "Page not found.".into_view()>
+                <Route path=path!("/") view=LoginScreen />
                 <ParentRoute path=path!("") view=TopBar>
-                    <Route path=StaticSegment("/") view=Home />
+                    <Route path=path!("/home") view=Home />
                 </ParentRoute>
             </Routes>
         </Router>
@@ -59,19 +61,39 @@ pub fn App() -> impl IntoView {
 #[component]
 pub fn TopBar() -> impl IntoView {
     view! {
-        <div class="navbar bg-base-100 px-6">
-            <div class="navbar-start gap-6">
-                <img class="text-left" src="/bento-dark-64.webp" width=36 />
-                <h1 class="text-xl font-bold">Bento</h1>
+        <>
+            <div class="navbar bg-base-100 px-6">
+                <div class="navbar-start gap-6">
+                    <img class="text-left" src="/bento-dark-64.webp" width=36 />
+                    <h1 class="text-xl font-bold">Bento</h1>
+                </div>
+                <div class="navbar-end gap-6">
+                    <a class="link link-hover" href="#">Documentation</a>
+                    <button class="btn btn-ghost" on:click=|_| println!("clicked!")>
+                        <Bell />
+                    </button>
+                    <a class="link link-hover" href="#">Logout</a>
+                </div>
             </div>
-            <div class="navbar-end gap-6">
-                <a class="link link-hover" href="#">Documentation</a>
-                <button class="btn btn-ghost" on:click=|_| println!("clicked!")>
-                    <Bell />
-                </button>
-                <a class="link link-hover" href="#">Logout</a>
-            </div>
-        </div>
-        <hr class="border-white/15" />
+            <hr class="border-white/15" />
+        </>
+    }
+}
+
+#[server]
+pub async fn login(username: String, password: String) -> Result<(), ServerFnError> {
+    let app_cfg = crate::config::LOCAL_CONF.as_ref();
+    let admin_username: &str = app_cfg.admin.username.as_str();
+    let admin_password: &str = app_cfg.admin.password.as_str();
+
+    println!(
+        "{username} {password} compared to: {} {}",
+        admin_username, admin_password
+    );
+
+    if admin_username == username && admin_password == password {
+        Ok(())
+    } else {
+        Err(ServerFnError::ServerError("Invalid credentials".into()))
     }
 }

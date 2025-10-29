@@ -7,6 +7,7 @@ use super::{
     Username,
 };
 
+/// An in-memory auth store designed for non-persistent usage.
 #[derive(Clone)]
 pub struct MemoryAuthStore {
     pub(self) users: HashMap<UserId, User>,

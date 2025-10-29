@@ -33,6 +33,14 @@ pub struct SessionToken(pub String); // bearer
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct SessionIp(pub String);
 
+/// An enum to represent a user's permission level.
+/// - Admins:
+///   Can create other users
+///
+///   TODO: Add the ability to manage other user's workspaces
+///
+/// - Users:
+///   Can manage their own workspaces
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Role {
     Admin,
