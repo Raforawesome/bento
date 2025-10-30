@@ -4,7 +4,7 @@
 
 # Bento
 
-A lightweight, secure authentication backend as a service (BaaS) built with Rust.
+A lightweight, secure backend as a service (BaaS) built with Rust.
 
 ## Overview
 
