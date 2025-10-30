@@ -1,3 +1,9 @@
+<div align="center">
+  <img src="src/webui/public/bento-dark-64.webp" alt="Bento Logo" width="64" height="64">
+</div>
+
+---
+
 # Bento
 
 A lightweight, secure authentication backend as a service (BaaS) built with Rust.
