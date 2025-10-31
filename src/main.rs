@@ -11,9 +11,9 @@ async fn main() {
     use axum::routing::post;
     #[cfg(feature = "rest-api")]
     use axum_client_ip::ClientIpSource;
-    use bento::server::AppState;
     #[cfg(feature = "rest-api")]
     use bento::server::ConcreteAuthStore;
+    use bento::{config, server::AppState};
     use bento::{storage::memstore::MemoryAuthStore, webui};
     use leptos::prelude::*;
     use leptos_axum::{LeptosRoutes, file_and_error_handler, generate_route_list};
@@ -49,6 +49,7 @@ async fn main() {
     let app_state = AppState {
         leptos_options,
         auth_store: auth_store.clone(),
+        secrets: Arc::new(config::Secrets::load().expect("valid secrets file")),
     };
 
     // define api sub-router for the server

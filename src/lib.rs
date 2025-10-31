@@ -8,11 +8,14 @@ pub mod server {
     // declare which implementation of AuthStore to use
     use leptos::config::LeptosOptions;
 
+    use crate::config::{CookieKey, Secrets};
+
     // Unified AppState struct
     #[derive(Clone)]
     pub struct AppState {
         pub leptos_options: LeptosOptions,
         pub auth_store: Arc<ConcreteAuthStore>,
+        pub secrets: Arc<Secrets>,
     }
 
     // Axum uses FromRef impls to clone "sub-state" into routers
@@ -25,6 +28,12 @@ pub mod server {
     impl FromRef<AppState> for LeptosOptions {
         fn from_ref(state: &AppState) -> Self {
             state.leptos_options.clone()
+        }
+    }
+
+    impl FromRef<AppState> for Arc<Secrets> {
+        fn from_ref(state: &AppState) -> Self {
+            state.secrets.clone()
         }
     }
 }
