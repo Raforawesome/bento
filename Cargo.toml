@@ -29,7 +29,7 @@ tower-http = { version = "0.6.6", features = ["compression-gzip", "compression-b
 tracing = { version = "0.1.41", features = ["max_level_debug", "release_max_level_info"], optional = true }
 tracing-subscriber = { version = "0.3.20", optional = true }
 uuid = { version = "1.18.1", features = ["serde", "v7"], optional = true }
-wasm-bindgen = { version = "0.2.105", optional = true }
+wasm-bindgen = { version = "=0.2.103", optional = true }
 
 [features]
 hydrate = [
