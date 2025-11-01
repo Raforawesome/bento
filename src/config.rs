@@ -25,7 +25,7 @@ pub struct Admin {
 }
 
 pub fn grab_config() -> Result<Config, de::Error> {
-    let config_str = std::fs::read_to_string("bento.toml").expect("Failed to read bento.toml");
+    let config_str = std::fs::read_to_string("bento.toml").expect("a file called ./bento.toml");
     toml::from_str(&config_str)
 }
 
@@ -56,7 +56,7 @@ impl Secrets {
             let secrets: Secrets = toml::from_str(&secrets_str).expect("valid secrets file");
             Ok(secrets)
         } else {
-            // Generate a new cookie key if secrets file doesn't exist
+            // generate new secrets if secrets file doesn't exist
             let secrets = Secrets {
                 cookie_key: CookieKey::generate(),
             };
@@ -72,13 +72,16 @@ impl Secrets {
     }
 }
 
-// serde glue for saving cookie key
+// serde glue for saving cookie key to disk
+use base64::{Engine as _, engine::general_purpose::URL_SAFE as Base64Url};
+
 impl Serialize for CookieKey {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
-        serializer.serialize_bytes(self.0.master())
+        let encoded: String = Base64Url.encode(self.0.master());
+        serializer.serialize_str(&encoded)
     }
 }
 
@@ -87,7 +90,8 @@ impl<'de> Deserialize<'de> for CookieKey {
     where
         D: serde::Deserializer<'de>,
     {
-        let bytes = <Vec<u8>>::deserialize(deserializer)?;
+        let encoded = <String>::deserialize(deserializer)?;
+        let bytes: Vec<u8> = Base64Url.decode(&encoded).expect("valid base64 cookie key");
         Ok(CookieKey(cookie::Key::from(&bytes)))
     }
 }

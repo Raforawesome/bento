@@ -27,7 +27,7 @@ async fn main() {
      * end static code
      */
 
-    // Setup tracing for logging
+    // set up tracing for logging
     let subscriber = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
         .with_file(false)
@@ -37,11 +37,11 @@ async fn main() {
     tracing::subscriber::set_global_default(subscriber).expect("Failed to set tracing subscriber");
     info!("Starting Bento BaaS server on {}", ADDR);
 
-    // Initialize the auth store
+    // initialize the auth store
     let auth_store = Arc::new(MemoryAuthStore::new(MAX_SESSIONS_PER_USER));
     debug!("Authentication store initialized");
 
-    // Set up leptos webui
+    // set up leptos webui
     let leptos_conf = get_configuration(None).unwrap();
     let leptos_routes = generate_route_list(webui::App);
     let leptos_options = leptos_conf.leptos_options;
