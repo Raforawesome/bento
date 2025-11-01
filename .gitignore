@@ -1,3 +1,4 @@
 target/
 .idea/
 .vscode/
+.bento_secrets
