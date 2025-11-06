@@ -44,6 +44,7 @@ impl AuthStore for MemoryAuthStore {
         &self,
         username: Username,
         password_hash: PasswordHash,
+        role: Role,
     ) -> Result<User, AuthError> {
         let user_map = self.users.pin();
 
@@ -53,7 +54,7 @@ impl AuthStore for MemoryAuthStore {
         } else {
             let user = User {
                 id: UserId::new(),
-                role: Role::User,
+                role,
                 username,
                 password_hash,
             };

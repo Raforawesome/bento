@@ -84,7 +84,24 @@ pub trait AuthStore: Send + Sync {
         &self,
         username: Username,
         pass_hash: PasswordHash,
+        role: Role,
     ) -> impl Future<Output = Result<User, AuthError>> + Send;
+
+    fn create_standard_user(
+        &self,
+        username: Username,
+        pass_hash: PasswordHash,
+    ) -> impl Future<Output = Result<User, AuthError>> + Send {
+        self.create_user(username, pass_hash, Role::User)
+    }
+
+    fn create_admin(
+        &self,
+        username: Username,
+        pass_hash: PasswordHash,
+    ) -> impl Future<Output = Result<User, AuthError>> + Send {
+        self.create_user(username, pass_hash, Role::Admin)
+    }
 
     fn get_user_by_id(&self, id: &UserId) -> impl Future<Output = Result<User, AuthError>> + Send;
 

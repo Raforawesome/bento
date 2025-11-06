@@ -57,7 +57,7 @@ pub async fn register<S: AuthStore>(
         debug!("Creating new user");
 
         match store
-            .create_user(username, PasswordHash::from(&password))
+            .create_standard_user(username, PasswordHash::from(&password))
             .await
         {
             Ok(user) => {
