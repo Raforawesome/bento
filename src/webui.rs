@@ -82,16 +82,21 @@ pub fn TopBar() -> impl IntoView {
 
 #[server]
 pub async fn login(username: String, password: String) -> Result<(), ServerFnError> {
+    // place uses within ssr-gated code
+    use crate::config::Admin;
+
     let app_cfg = crate::config::LOCAL_CONF.as_ref();
-    let admin_username: &str = app_cfg.admin.username.as_str();
-    let admin_password: &str = app_cfg.admin.password.as_str();
+    let Admin {
+        username: admin_username, // destructure the username field and assign to local var `admin_username`
+        password: admin_password, // since we're destructuring a ref these local vars are also references
+    } = &app_cfg.admin;
 
     println!(
         "{username} {password} compared to: {} {}",
         admin_username, admin_password
     );
 
-    if admin_username == username && admin_password == password {
+    if admin_username == &username && admin_password == &password {
         Ok(())
     } else {
         Err(ServerFnError::ServerError("Invalid credentials".into()))
