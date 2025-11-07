@@ -42,20 +42,20 @@ impl AuthStore for MemoryAuthStore {
 
     async fn create_user(
         &self,
-        username: Username,
+        username: &Username,
         password_hash: PasswordHash,
         role: Role,
     ) -> Result<User, AuthError> {
         let user_map = self.users.pin();
 
-        if user_map.values().any(|u| u.username == username) {
+        if user_map.values().any(|u| &u.username == username) {
             debug!("User creation failed: username already exists");
             Err(AuthError::UserExists)
         } else {
             let user = User {
                 id: UserId::new(),
                 role,
-                username,
+                username: username.clone(),
                 password_hash,
             };
             debug!(user_id = %user.id.0, "Creating new user");

@@ -8,7 +8,7 @@ pub mod server {
     // declare which implementation of AuthStore to use
     use leptos::config::LeptosOptions;
 
-    use crate::config::{CookieKey, Secrets};
+    use crate::config::Secrets;
 
     // Unified AppState struct
     #[derive(Clone)]

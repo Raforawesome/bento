@@ -82,14 +82,14 @@ pub trait AuthStore: Send + Sync {
 
     fn create_user(
         &self,
-        username: Username,
+        username: &Username,
         pass_hash: PasswordHash,
         role: Role,
     ) -> impl Future<Output = Result<User, AuthError>> + Send;
 
     fn create_standard_user(
         &self,
-        username: Username,
+        username: &Username,
         pass_hash: PasswordHash,
     ) -> impl Future<Output = Result<User, AuthError>> + Send {
         self.create_user(username, pass_hash, Role::User)
@@ -97,7 +97,7 @@ pub trait AuthStore: Send + Sync {
 
     fn create_admin(
         &self,
-        username: Username,
+        username: &Username,
         pass_hash: PasswordHash,
     ) -> impl Future<Output = Result<User, AuthError>> + Send {
         self.create_user(username, pass_hash, Role::Admin)
@@ -175,14 +175,6 @@ impl Default for SessionToken {
 impl AsRef<str> for Username {
     fn as_ref(&self) -> &str {
         &self.0
-    }
-}
-
-impl std::ops::Deref for Username {
-    type Target = str;
-
-    fn deref(&self) -> &Self::Target {
-        self.as_ref()
     }
 }
 
