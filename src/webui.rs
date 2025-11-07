@@ -80,25 +80,42 @@ pub fn TopBar() -> impl IntoView {
     }
 }
 
+enum ServerError {
+    InvalidCreds,
+    RequestError,
+    Unknown,
+}
+
 #[server]
 pub async fn login(username: String, password: String) -> Result<(), ServerFnError> {
-    // place uses within ssr-gated code
-    use crate::config::Admin;
+    // place server-specific use statements within ssr-gated code
+    use crate::server::AppState;
+    use crate::storage::{AuthStore, PasswordHash, User, Username};
+    use axum_client_ip::ClientIp;
+    use axum_extra::extract::cookie::CookieJar;
 
-    let app_cfg = crate::config::LOCAL_CONF.as_ref();
-    let Admin {
-        username: admin_username, // destructure the username field and assign to local var `admin_username`
-        password: admin_password, // since we're destructuring a ref these local vars are also references
-    } = &app_cfg.admin;
+    // unwrap used here because this is basic plumbing done at initialization
+    let app_state: AppState = use_context().expect("Axum state in leptos context");
+    let auth_store = app_state.auth_store.clone();
+    let jar: CookieJar = leptos_axum::extract().await?;
+    let ClientIp(client_ip) = leptos_axum::extract().await?;
 
-    println!(
-        "{username} {password} compared to: {} {}",
-        admin_username, admin_password
-    );
+    // Strong types for username and password
+    let username = Username(username);
+    let pass_hash =
+        PasswordHash::try_from(password.as_str()).map_err(|_| ServerError::RequestError)?;
 
-    if admin_username == &username && admin_password == &password {
-        Ok(())
-    } else {
-        Err(ServerFnError::ServerError("Invalid credentials".into()))
+    let user: User = auth_store.get_user_by_username(&username).await?;
+
+    Err(ServerError::InvalidCreds.into())
+}
+
+impl From<ServerError> for ServerFnError {
+    fn from(err: ServerError) -> Self {
+        match err {
+            ServerError::InvalidCreds => ServerFnError::ServerError("Invalid credentials".into()),
+            ServerError::RequestError => ServerFnError::ServerError("Client request error".into()),
+            ServerError::Unknown => ServerFnError::ServerError("An unknown error occurred".into()),
+        }
     }
 }
