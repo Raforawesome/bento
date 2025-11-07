@@ -201,3 +201,27 @@ impl PasswordHash {
             .is_ok()
     }
 }
+
+impl TryFrom<&[u8]> for PasswordHash {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        let pass_bytes: &[u8] = value;
+        let salt = SaltString::generate(&mut ArgonRng);
+        let argon2 = Argon2::default();
+        let password_hash = argon2.hash_password(pass_bytes, &salt)?.to_string();
+        Ok(Self(password_hash))
+    }
+}
+
+impl TryFrom<&str> for PasswordHash {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let pass_bytes: &[u8] = value.as_bytes();
+        let salt = SaltString::generate(&mut ArgonRng);
+        let argon2 = Argon2::default();
+        let password_hash = argon2.hash_password(pass_bytes, &salt)?.to_string();
+        Ok(Self(password_hash))
+    }
+}
