@@ -57,10 +57,9 @@ ssr = [
     "leptos/ssr",
     "leptos_meta/ssr",
     "leptos_router/ssr",
-]
-rest-api = [
     "dep:axum-client-ip",
 ]
+rest-api = []
 
 # Defines a size-optimized profile for the WASM bundle in release mode
 [profile.wasm-release]

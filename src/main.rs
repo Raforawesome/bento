@@ -9,7 +9,6 @@ async fn main() {
     use axum::Router;
     #[cfg(feature = "rest-api")]
     use axum::routing::post;
-    #[cfg(feature = "rest-api")]
     use axum_client_ip::ClientIpSource;
     #[cfg(feature = "rest-api")]
     use bento::server::ConcreteAuthStore;
@@ -95,7 +94,8 @@ async fn main() {
         .fallback(file_and_error_handler::<AppState, _>(webui::shell)) // fallback for static files & 404s
         .layer(RequestDecompressionLayer::new().br(true).gzip(true))
         .layer(CompressionLayer::new().br(true).gzip(true))
-        .with_state(app_state);
+        .with_state(app_state)
+        .layer(ClientIpSource::ConnectInfo.into_extension());
 
     // Start the server
     info!("Binding to address: {}", ADDR);
