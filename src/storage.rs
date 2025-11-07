@@ -178,15 +178,15 @@ impl AsRef<str> for Username {
     }
 }
 
-impl PasswordHash {
-    pub fn from<B: AsRef<[u8]>>(password: B) -> Self {
-        let pass_bytes: &[u8] = password.as_ref();
-        let salt = SaltString::generate(&mut ArgonRng);
-        let argon2 = Argon2::default();
-        let password_hash = argon2.hash_password(pass_bytes, &salt).unwrap().to_string();
-        Self(password_hash)
-    }
+impl std::ops::Deref for Username {
+    type Target = str;
 
+    fn deref(&self) -> &Self::Target {
+        self.as_ref()
+    }
+}
+
+impl PasswordHash {
     pub fn verify<B: AsRef<[u8]>>(&self, password: B) -> bool {
         let pass_bytes: &[u8] = password.as_ref();
         let parsed_hash = ArgonHash::new(&self.0);
