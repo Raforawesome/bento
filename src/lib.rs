@@ -1,21 +1,19 @@
-#![feature(impl_trait_in_bindings)]
-
+#![feature(impl_trait_in_bindings, bool_to_result)]
 #[cfg(feature = "ssr")]
 pub mod server {
     use std::sync::Arc;
     pub type ConcreteAuthStore = super::storage::memstore::MemoryAuthStore;
     use axum::extract::FromRef;
+    use axum_extra::extract::cookie::Key;
     // declare which implementation of AuthStore to use
     use leptos::config::LeptosOptions;
-
-    use crate::config::Secrets;
 
     // Unified AppState struct
     #[derive(Clone)]
     pub struct AppState {
         pub leptos_options: LeptosOptions,
         pub auth_store: Arc<ConcreteAuthStore>,
-        pub secrets: Arc<Secrets>,
+        pub cookie_key: Key,
     }
 
     // Axum uses FromRef impls to clone "sub-state" into routers
@@ -31,9 +29,9 @@ pub mod server {
         }
     }
 
-    impl FromRef<AppState> for Arc<Secrets> {
+    impl FromRef<AppState> for Key {
         fn from_ref(state: &AppState) -> Self {
-            state.secrets.clone()
+            state.cookie_key.clone()
         }
     }
 }

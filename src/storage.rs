@@ -25,7 +25,7 @@ pub struct UserId(pub Uuid);
 pub struct Username(pub String);
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct PasswordHash(pub String);
+pub struct PasswordHash(String);
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct SessionToken(pub String); // bearer
@@ -191,6 +191,10 @@ impl PasswordHash {
         Argon2::default()
             .verify_password(pass_bytes, &parsed_hash)
             .is_ok()
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
     }
 }
 

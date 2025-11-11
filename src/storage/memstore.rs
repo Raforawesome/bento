@@ -1,6 +1,6 @@
 use papaya::HashMap;
 use time::{Duration, OffsetDateTime};
-use tracing::debug;
+use tracing::{debug, trace};
 
 use super::{
     AuthError, AuthStore, PasswordHash, Role, Session, SessionIp, SessionToken, User, UserId,
@@ -58,11 +58,11 @@ impl AuthStore for MemoryAuthStore {
                 username: username.clone(),
                 password_hash,
             };
-            debug!(user_id = %user.id.0, "Creating new user");
+            trace!(user_id = %user.id.0, "Creating new user");
             user_map.insert(user.id, user.clone());
             let result = user_map.get(&user.id);
-            debug!(?result, "from map after insert");
-            debug!(user_id = %user.id.0, "User created successfully");
+            trace!(?result, "from map after insert");
+            trace!(user_id = %user.id.0, "User created successfully");
             Ok(user)
         }
     }

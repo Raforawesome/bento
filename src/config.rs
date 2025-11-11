@@ -4,8 +4,7 @@ use axum_extra::extract::cookie;
 use serde::{Deserialize, Serialize};
 use toml::de;
 
-pub static LOCAL_CONF: LazyLock<Config> =
-    LazyLock::new(|| grab_config().expect("Failed to load configuration from bento.toml"));
+pub static LOCAL_CONF: LazyLock<Config> = LazyLock::new(|| grab_config().expect("bento.toml file"));
 
 #[derive(Deserialize)]
 pub struct Config {
@@ -20,7 +19,7 @@ impl AsRef<Config> for Config {
 
 #[derive(Deserialize)]
 pub struct Admin {
-    pub username: String,
+    pub username: Username,
     pub password: String,
 }
 
@@ -35,17 +34,18 @@ pub fn grab_config() -> Result<Config, de::Error> {
 use std::fs;
 use std::path::Path;
 
-pub struct CookieKey(cookie::Key);
+#[derive(Deserialize, Serialize)]
+pub struct Secrets {
+    pub cookie_key: CookieKey,
+}
+
+#[derive(Clone)]
+pub struct CookieKey(pub cookie::Key);
 
 impl CookieKey {
     pub fn generate() -> Self {
         CookieKey(cookie::Key::generate())
     }
-}
-
-#[derive(Deserialize, Serialize)]
-pub struct Secrets {
-    pub cookie_key: CookieKey,
 }
 
 impl Secrets {
@@ -72,8 +72,18 @@ impl Secrets {
     }
 }
 
+impl Default for Secrets {
+    fn default() -> Self {
+        Secrets {
+            cookie_key: CookieKey(cookie::Key::from(&[0u8; 64])),
+        }
+    }
+}
+
 // serde glue for saving cookie key to disk
 use base64::{Engine as _, engine::general_purpose::URL_SAFE as Base64Url};
+
+use crate::storage::Username;
 
 impl Serialize for CookieKey {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

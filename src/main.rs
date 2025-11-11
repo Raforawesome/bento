@@ -10,14 +10,16 @@ async fn main() {
     #[cfg(feature = "rest-api")]
     use axum::routing::post;
     use axum_client_ip::ClientIpSource;
+    use bento::config::{Admin, CookieKey, LOCAL_CONF};
     #[cfg(feature = "rest-api")]
     use bento::server::ConcreteAuthStore;
+    use bento::storage::{AuthStore, PasswordHash, Username};
     use bento::{config, server::AppState};
     use bento::{storage::memstore::MemoryAuthStore, webui};
     use leptos::prelude::*;
     use leptos_axum::{LeptosRoutes, file_and_error_handler, generate_route_list};
     use tower_http::{compression::CompressionLayer, decompression::RequestDecompressionLayer};
-    use tracing::{debug, info};
+    use tracing::{debug, info, warn};
 
     const ADDR: &str = "0.0.0.0:8000"; // local address to run webserver on
     const MAX_SESSIONS_PER_USER: usize = 5;
@@ -45,11 +47,20 @@ async fn main() {
     let leptos_routes = generate_route_list(webui::App);
     let leptos_options = leptos_conf.leptos_options;
 
+    let mut local_secrets = config::Secrets::load().expect("secrets file .bento_secrets");
+    let CookieKey(cookie_key) = local_secrets.cookie_key.clone();
     let app_state = AppState {
         leptos_options,
         auth_store: auth_store.clone(),
-        secrets: Arc::new(config::Secrets::load().expect("valid secrets file")),
+        cookie_key, // unfortunately axum requires this stay plain; TODO: rewrite cookie-ware
     };
+    unsafe {
+        // zero out [Secrets] struct so keys don't hang around in memory:
+        // &raw mut local_secrets could also be used, but these kinds of pointer calls don't
+        // force rust's aliasing rules. we have no reason to bypass those here, as this
+        // should be the only reference, mutable or not.
+        std::ptr::write_volatile(&mut local_secrets as *mut _, config::Secrets::default());
+    }
 
     // define api sub-router for the server
     #[cfg(feature = "rest-api")]
@@ -76,6 +87,18 @@ async fn main() {
             move || webui::shell(opts.leptos_options.clone())
         },
     );
+
+    // Register initial auth account
+    let app_conf = LOCAL_CONF.as_ref();
+    let Admin { username, password } = &app_conf.admin;
+    let pass_hash: PasswordHash =
+        PasswordHash::try_from(password.as_str()).expect("valid password in config");
+
+    if let Ok(user) = auth_store.create_admin(username, pass_hash).await {
+        info!(user_id = %user.id.0, "Admin user created successfully");
+    } else {
+        warn!("Admin user already exists, skipping creation");
+    }
 
     // Unify both sub-routers under one
     #[cfg(feature = "rest-api")]

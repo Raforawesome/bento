@@ -107,7 +107,9 @@ pub async fn login(username: String, password: String) -> Result<(), ServerFnErr
 
     let user: User = auth_store.get_user_by_username(&username).await?;
 
-    Err(ServerError::InvalidCreds.into())
+    user.password_hash
+        .verify(pass_hash.as_str())
+        .ok_or(ServerError::InvalidCreds.into())
 }
 
 impl From<ServerError> for ServerFnError {
