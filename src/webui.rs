@@ -91,8 +91,11 @@ enum ServerError {
     Unknown,
 }
 
+#[cfg(feature = "ssr")]
+use crate::storage::{Session, SessionIp};
+
 #[server]
-pub async fn login(username: String, password: String) -> Result<(), ServerFnError> {
+pub async fn login(username: String, password: String) -> Result<Session, ServerFnError> {
     // place server-specific use statements within ssr-gated code
     use crate::server::AppState;
     use crate::storage::{AuthStore, PasswordHash, User, Username};
@@ -112,17 +115,10 @@ pub async fn login(username: String, password: String) -> Result<(), ServerFnErr
 
     let user: User = auth_store.get_user_by_username(&username).await?;
 
-    user.password_hash
-        .verify(pass_hash.as_str())
-        .ok_or(ServerError::InvalidCreds.into())
-}
-
-impl From<ServerError> for ServerFnError {
-    fn from(err: ServerError) -> Self {
-        match err {
-            ServerError::InvalidCreds => ServerFnError::ServerError("Invalid credentials".into()),
-            ServerError::RequestError => ServerFnError::ServerError("Client request error".into()),
-            ServerError::Unknown => ServerFnError::ServerError("An unknown error occurred".into()),
-        }
+    if user.password_hash.verify(pass_hash.as_str()) {
+        let session_ip = SessionIp(client_ip);
+        Ok(auth_store.issue_session(&user.id, session_ip).await?)
+    } else {
+        Err(ServerError::InvalidCreds.into())
     }
 }
