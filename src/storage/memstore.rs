@@ -246,12 +246,13 @@ impl AuthStore for MemoryAuthStore {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::net::IpAddr;
 
     #[tokio::test]
     async fn enforces_session_limit() {
         let store = MemoryAuthStore::new(1);
         let user_id = UserId::new();
-        let ip = SessionIp("127.0.0.1".to_string());
+        let ip = SessionIp(IpAddr::from([127, 0, 0, 1]));
 
         let first = store
             .issue_session(&user_id, ip.clone())

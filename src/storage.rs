@@ -1,5 +1,7 @@
 pub mod memstore;
 
+use std::net::IpAddr;
+
 use argon2::{
     Argon2,
     password_hash::{
@@ -31,7 +33,7 @@ pub struct PasswordHash(String);
 pub struct SessionToken(pub String); // bearer
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct SessionIp(pub String);
+pub struct SessionIp(pub IpAddr);
 
 /// An enum to represent a user's permission level.
 /// - Admins:

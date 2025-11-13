@@ -67,10 +67,7 @@ pub async fn register<S: AuthStore>(
                 debug!(user_id = %user.id.0, "User created successfully");
                 // create token
                 debug!("Issuing session for new user");
-                match store
-                    .issue_session(&user.id, SessionIp(client_ip.to_string()))
-                    .await
-                {
+                match store.issue_session(&user.id, SessionIp(client_ip)).await {
                     Ok(session) => {
                         debug!(
                             user_id = %user.id.0,
@@ -107,10 +104,7 @@ pub async fn login<S: AuthStore>(
         Ok(user) => {
             if user.password_hash.verify(&req.password) {
                 debug!(user_id = %user.id.0, "Password verified, issuing session");
-                match store
-                    .issue_session(&user.id, SessionIp(client_ip.to_string()))
-                    .await
-                {
+                match store.issue_session(&user.id, SessionIp(client_ip)).await {
                     Ok(session) => {
                         debug!(
                             user_id = %user.id.0,
