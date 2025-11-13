@@ -30,7 +30,7 @@ pub struct Username(pub String);
 pub struct PasswordHash(String);
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct SessionToken(pub String); // bearer
+pub struct SessionId(pub String);
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct SessionIp(pub IpAddr);
@@ -72,7 +72,7 @@ pub enum AuthError {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Session {
-    pub token: SessionToken,
+    pub id: SessionId,
     pub user_id: UserId,
     pub ip: SessionIp,
     pub created_at: OffsetDateTime,
@@ -128,17 +128,17 @@ pub trait AuthStore: Send + Sync {
 
     fn fetch_session(
         &self,
-        token: &SessionToken,
+        token: &SessionId,
     ) -> impl Future<Output = Result<Session, AuthError>> + Send;
 
     fn extend_session(
         &self,
-        token: &SessionToken,
+        token: &SessionId,
     ) -> impl Future<Output = Result<Session, AuthError>> + Send;
 
     fn revoke_session(
         &self,
-        token: &SessionToken,
+        token: &SessionId,
     ) -> impl Future<Output = Result<(), AuthError>> + Send;
 }
 
@@ -157,18 +157,22 @@ impl Default for UserId {
     }
 }
 
-impl SessionToken {
+impl SessionId {
     pub fn new() -> Self {
         let mut buf = [0_u8; 120];
         if OsRng.try_fill_bytes(&mut buf).is_ok() {
-            SessionToken(Base64Url.encode(buf))
+            SessionId(Base64Url.encode(buf))
         } else {
             panic!("Failed to generate secure numbers from the operating system.");
         }
     }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
 }
 
-impl Default for SessionToken {
+impl Default for SessionId {
     fn default() -> Self {
         Self::new()
     }

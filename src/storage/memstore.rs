@@ -3,15 +3,14 @@ use time::{Duration, OffsetDateTime};
 use tracing::{debug, trace};
 
 use super::{
-    AuthError, AuthStore, PasswordHash, Role, Session, SessionIp, SessionToken, User, UserId,
-    Username,
+    AuthError, AuthStore, PasswordHash, Role, Session, SessionId, SessionIp, User, UserId, Username,
 };
 
 /// An in-memory auth store designed for non-persistent usage.
 #[derive(Clone)]
 pub struct MemoryAuthStore {
     pub(self) users: HashMap<UserId, User>,
-    pub(self) sessions: HashMap<SessionToken, Session>,
+    pub(self) sessions: HashMap<SessionId, Session>,
     pub(self) max_sessions_per_user: usize,
 }
 
@@ -158,24 +157,24 @@ impl AuthStore for MemoryAuthStore {
         }
 
         let session = Session {
-            token: SessionToken::new(),
+            id: SessionId::new(),
             user_id: *id,
             ip,
             created_at: now,
             expires_at: expires,
         };
 
-        session_map.insert(session.token.clone(), session.clone());
+        session_map.insert(session.id.clone(), session.clone());
         debug!(
             user_id = %id.0,
-            token_len = session.token.0.len(),
+            token_len = session.id.0.len(),
             expires_at = %expires,
             "Session created successfully"
         );
         Ok(session)
     }
 
-    async fn fetch_session(&self, token: &SessionToken) -> Result<Session, AuthError> {
+    async fn fetch_session(&self, token: &SessionId) -> Result<Session, AuthError> {
         debug!(token_len = token.0.len(), "Fetching session");
         let session_map = self.sessions.pin();
 
@@ -202,7 +201,7 @@ impl AuthStore for MemoryAuthStore {
         }
     }
 
-    async fn extend_session(&self, token: &SessionToken) -> Result<Session, AuthError> {
+    async fn extend_session(&self, token: &SessionId) -> Result<Session, AuthError> {
         debug!(token_len = token.0.len(), "Extending session");
         let session_map = self.sessions.pin();
 
@@ -230,7 +229,7 @@ impl AuthStore for MemoryAuthStore {
         }
     }
 
-    async fn revoke_session(&self, token: &SessionToken) -> Result<(), AuthError> {
+    async fn revoke_session(&self, token: &SessionId) -> Result<(), AuthError> {
         debug!(token_len = token.0.len(), "Revoking session");
         let session_map = self.sessions.pin();
         if let Some(session) = session_map.remove(token) {
@@ -265,7 +264,7 @@ mod tests {
         }
 
         store
-            .revoke_session(&first.token)
+            .revoke_session(&first.id)
             .await
             .expect("revocation should succeed");
 
