@@ -10,6 +10,7 @@ use leptos_router::{
     path,
 };
 use lucide_leptos::Bell;
+use thiserror::Error;
 
 use crate::webui::login_screen::LoginScreen;
 
@@ -80,9 +81,13 @@ pub fn TopBar() -> impl IntoView {
     }
 }
 
+#[derive(Debug, Error)]
 enum ServerError {
+    #[error("Invalid credentials provided")]
     InvalidCreds,
+    #[error("Client request error")]
     RequestError,
+    #[error("An unknown error occurred")]
     Unknown,
 }
 
