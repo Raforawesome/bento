@@ -31,14 +31,19 @@ async fn main() {
      */
 
     // set up tracing for logging
+    let time_format =
+        time::format_description::parse("[hour]:[minute]:[second].[subsecond digits:2]").unwrap();
+    let local_offset = time::UtcOffset::current_local_offset().unwrap_or(time::UtcOffset::UTC);
+    let timer = tracing_subscriber::fmt::time::OffsetTime::new(local_offset, time_format);
+
     let subscriber = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
+        .with_timer(timer)
         .with_file(false)
         .with_line_number(true)
         .with_target(true)
         .finish();
     tracing::subscriber::set_global_default(subscriber).expect("Failed to set tracing subscriber");
-    info!("Starting Bento BaaS server on {}", ADDR);
 
     // initialize the auth store
     let auth_store = Arc::new(MemoryAuthStore::new(MAX_SESSIONS_PER_USER));
@@ -97,7 +102,7 @@ async fn main() {
         PasswordHash::try_from(password.as_str()).expect("valid password in config");
 
     if let Ok(user) = auth_store.create_admin(username, pass_hash).await {
-        info!(user_id = %user.id.0, "Admin user created successfully");
+        info!(username = %username.0, password = %password, "Admin user created successfully");
     } else {
         warn!("Admin user already exists, skipping creation");
     }
@@ -118,6 +123,7 @@ async fn main() {
     let app: Router = Router::new()
         .merge(ssr)
         .fallback(file_and_error_handler::<AppState, _>(webui::shell)) // fallback for static files & 404s
+        .layer(CookieManagerLayer::new())
         .layer(RequestDecompressionLayer::new().br(true).gzip(true))
         .layer(CompressionLayer::new().br(true).gzip(true))
         .with_state(app_state)

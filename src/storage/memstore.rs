@@ -79,7 +79,6 @@ impl AuthStore for MemoryAuthStore {
     }
 
     async fn get_user_by_username(&self, username: &Username) -> Result<User, AuthError> {
-        debug!("Looking up user by username");
         let user_map = self.users.pin();
         let result = user_map
             .values()
