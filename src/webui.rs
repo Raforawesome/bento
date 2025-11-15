@@ -94,6 +94,7 @@ enum ServerError {
 use crate::types::{Session, SessionIp};
 
 #[server]
+// TODO: move to login_screen.rs to colocate code (after commit messages)
 pub async fn login(username: String, password: String) -> Result<Session, ServerFnError> {
     // place server-specific use statements within ssr-gated code
     use crate::server::AppState;
@@ -108,14 +109,12 @@ pub async fn login(username: String, password: String) -> Result<Session, Server
     let cookies: Cookies = leptos_axum::extract().await?;
     let ClientIp(client_ip) = leptos_axum::extract().await?;
 
-    // Strong types for username and password
+    // Strong type for username
     let username = Username(username);
-    let pass_hash =
-        PasswordHash::try_from(password.as_str()).map_err(|_| ServerError::RequestError)?;
 
     let user: User = auth_store.get_user_by_username(&username).await?;
 
-    if user.password_hash.verify(pass_hash.as_str()) {
+    if user.password_hash.verify(&password) {
         let session_ip = SessionIp(client_ip);
         let session = auth_store.issue_session(&user.id, session_ip).await?;
 
