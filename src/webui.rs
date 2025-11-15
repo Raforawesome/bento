@@ -100,12 +100,12 @@ pub async fn login(username: String, password: String) -> Result<Session, Server
     use crate::server::AppState;
     use crate::storage::{AuthStore, PasswordHash, User, Username};
     use axum_client_ip::ClientIp;
-    use axum_extra::extract::cookie::CookieJar;
+    use tower_cookies::{Cookie, Cookies, cookie::SameSite};
 
     // unwrap used here because this is basic plumbing done at initialization
     let app_state: AppState = use_context().expect("Axum state in leptos context");
     let auth_store = app_state.auth_store.clone();
-    let jar: CookieJar = leptos_axum::extract().await?;
+    let cookies: Cookies = leptos_axum::extract().await?;
     let ClientIp(client_ip) = leptos_axum::extract().await?;
 
     // Strong types for username and password
@@ -117,7 +117,27 @@ pub async fn login(username: String, password: String) -> Result<Session, Server
 
     if user.password_hash.verify(pass_hash.as_str()) {
         let session_ip = SessionIp(client_ip);
-        Ok(auth_store.issue_session(&user.id, session_ip).await?)
+        let session = auth_store.issue_session(&user.id, session_ip).await?;
+
+        // Set the auth cookie
+        #[cfg(not(debug_assertions))]
+        let cookie = Cookie::build(("session_id", session.id.as_str().to_string()))
+            .path("/")
+            .http_only(true)
+            .secure(true)
+            .same_site(SameSite::Lax)
+            .build();
+
+        #[cfg(debug_assertions)] // in debug mode we probably wont have https
+        let cookie = Cookie::build(("session_id", session.id.as_str().to_string()))
+            .path("/")
+            .http_only(true)
+            .same_site(SameSite::Lax)
+            .build();
+
+        cookies.add(cookie);
+
+        Ok(session)
     } else {
         Err(ServerError::InvalidCreds.into())
     }

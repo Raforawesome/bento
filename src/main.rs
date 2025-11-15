@@ -18,6 +18,7 @@ async fn main() {
     use bento::{storage::memstore::MemoryAuthStore, webui};
     use leptos::prelude::*;
     use leptos_axum::{LeptosRoutes, file_and_error_handler, generate_route_list};
+    use tower_cookies::CookieManagerLayer;
     use tower_http::{compression::CompressionLayer, decompression::RequestDecompressionLayer};
     use tracing::{debug, info, warn};
 
@@ -106,6 +107,7 @@ async fn main() {
         .merge(api)
         .merge(ssr)
         .fallback(file_and_error_handler::<AppState, _>(webui::shell)) // fallback for static files & 404s
+        .layer(CookieManagerLayer::new())
         .layer(RequestDecompressionLayer::new().br(true).gzip(true))
         .layer(CompressionLayer::new().br(true).gzip(true))
         .with_state(app_state)

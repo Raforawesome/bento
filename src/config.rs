@@ -1,8 +1,8 @@
 use std::sync::LazyLock;
 
-use axum_extra::extract::cookie;
 use serde::{Deserialize, Serialize};
 use toml::de;
+use tower_cookies::cookie;
 
 pub static LOCAL_CONF: LazyLock<Config> = LazyLock::new(|| grab_config().expect("bento.toml file"));
 
