@@ -83,7 +83,7 @@ impl Default for Secrets {
 // serde glue for saving cookie key to disk
 use base64::{Engine as _, engine::general_purpose::URL_SAFE as Base64Url};
 
-use crate::storage::Username;
+use crate::types::Username;
 
 impl Serialize for CookieKey {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

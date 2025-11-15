@@ -2,9 +2,8 @@ use papaya::HashMap;
 use time::{Duration, OffsetDateTime};
 use tracing::{debug, trace};
 
-use super::{
-    AuthError, AuthStore, PasswordHash, Role, Session, SessionId, SessionIp, User, UserId, Username,
-};
+use super::{AuthError, AuthStore};
+use crate::types::{PasswordHash, Role, Session, SessionId, SessionIp, User, UserId, Username};
 
 /// An in-memory auth store designed for non-persistent usage.
 #[derive(Clone)]

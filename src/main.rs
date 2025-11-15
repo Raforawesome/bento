@@ -13,7 +13,8 @@ async fn main() {
     use bento::config::{Admin, CookieKey, LOCAL_CONF};
     #[cfg(feature = "rest-api")]
     use bento::server::ConcreteAuthStore;
-    use bento::storage::{AuthStore, PasswordHash, Username};
+    use bento::storage::AuthStore;
+    use bento::types::PasswordHash;
     use bento::{config, server::AppState};
     use bento::{storage::memstore::MemoryAuthStore, webui};
     use leptos::prelude::*;

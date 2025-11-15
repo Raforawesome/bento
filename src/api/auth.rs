@@ -9,7 +9,10 @@ use axum_client_ip::ClientIp;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error};
 
-use crate::storage::{AuthError, AuthStore, PasswordHash, Role, Session, SessionIp, Username};
+use crate::{
+    storage::{AuthError, AuthStore},
+    types::{PasswordHash, Role, Session, SessionIp, Username},
+};
 
 #[derive(Debug, Deserialize)]
 pub struct AuthRequest {

@@ -91,14 +91,14 @@ enum ServerError {
     Unknown,
 }
 
-#[cfg(feature = "ssr")]
-use crate::storage::{Session, SessionIp};
+use crate::types::{Session, SessionIp};
 
 #[server]
 pub async fn login(username: String, password: String) -> Result<Session, ServerFnError> {
     // place server-specific use statements within ssr-gated code
     use crate::server::AppState;
-    use crate::storage::{AuthStore, PasswordHash, User, Username};
+    use crate::storage::AuthStore;
+    use crate::types::{User, Username};
     use axum_client_ip::ClientIp;
     use tower_cookies::{Cookie, Cookies, cookie::SameSite};
 

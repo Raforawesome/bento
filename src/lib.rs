@@ -43,6 +43,7 @@ pub mod config;
 #[cfg(feature = "ssr")]
 pub mod storage;
 
+pub mod types;
 pub mod webui;
 
 #[cfg(feature = "hydrate")]
