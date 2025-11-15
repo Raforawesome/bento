@@ -102,7 +102,7 @@ async fn main() {
         PasswordHash::try_from(password.as_str()).expect("valid password in config");
 
     if let Ok(user) = auth_store.create_admin(username, pass_hash).await {
-        info!(username = %username.0, password = %password, "Admin user created successfully");
+        info!(username = %user.username.0, id = %user.id.0, "Admin user created successfully");
     } else {
         warn!("Admin user already exists, skipping creation");
     }

@@ -14,7 +14,7 @@ use argon2::{
 #[cfg(feature = "ssr")]
 use base64::{Engine as _, engine::general_purpose::URL_SAFE as Base64Url};
 #[cfg(feature = "ssr")]
-use rand::{RngCore, rngs::OsRng};
+use rand::rngs::OsRng;
 #[cfg(feature = "ssr")]
 use tracing::debug;
 
@@ -159,4 +159,14 @@ impl TryFrom<&str> for PasswordHash {
         let password_hash = argon2.hash_password(pass_bytes, &salt)?.to_string();
         Ok(Self(password_hash))
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum ServerError {
+    #[error("Invalid credentials provided")]
+    InvalidCreds,
+    #[error("Client request error")]
+    RequestError,
+    #[error("An unknown error occurred")]
+    Unknown,
 }
