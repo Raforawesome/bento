@@ -13,7 +13,7 @@ Bento provides a robust API for user authentication, database features, file sto
 ## Key Features
 
 - **User Registration & Authentication**: Secure account creation and login flows
-- **Session Management**: Token-based sessions with automatic expiration
+- **Session Management**: Sessions with unique IDs automatic expiration
 - **Role-Based Access Control**: Simple user/admin permission system
 - **Database Features (SQL & Non-SQL)**: Upcoming
 - **File Storage**: Upcoming
@@ -21,7 +21,7 @@ Bento provides a robust API for user authentication, database features, file sto
 
 ## Frontend & API
 
-Bento ships with a Leptos frontend by default, providing a full-stack solution out of the box. Leptos is a cutting-edge Rust web framework
+Bento ships with a Leptos frontend by default, providing a full-stack solution out of the box. Leptos is a Rust web framework
 that offers fine-grained reactivity and server-side rendering, making for a performant and well-integrated default.
 
 For developers who want to build custom frontends (React, Vue, mobile apps, etc.), the REST API can be exposed by enabling the `rest-api` feature flag:
@@ -51,17 +51,10 @@ This runs a dev server with hot reloading. To build an optimized production buil
 cargo leptos build --release
 ```
 
-## Why Rust?
+## Tech Stack (Credits)
 
-Bento leverages Rust's unique advantages to deliver a service that is:
-
-- **Memory Safe**: Built on Rust's ownership model to eliminate common security vulnerabilities
-- **Concurrency Without Overhead**: Uses asynchronous Tokio for efficient handling of concurrent requests
-- **Predictable Performance**: Achieves consistent, low-latency response times even under heavy load
-
-The combination of Rust's expressive type system, memory safety, and native compilation provides excellent throughput while maintaining type safety across asynchronous boundaries, ensuring both correctness and performance.
-
-## Credits
+Bento is built in Rust. This is mostly because I simply prefer the language, but also 
+comes with advantages such as performant, native code and memory/type safety.
 
 This project would not be possible without the following awesome open-source projects:
 - [The Rust Programming Language](https://www.rust-lang.org/)
