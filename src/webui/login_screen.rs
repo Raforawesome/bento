@@ -79,8 +79,6 @@ pub fn LoginScreen() -> impl IntoView {
     }
 }
 
-use crate::types::Session;
-
 #[server]
 // TODO: move to login_screen.rs to colocate code (after commit messages)
 pub async fn login(username: String, password: String) -> Result<(), ServerFnError> {
@@ -88,13 +86,15 @@ pub async fn login(username: String, password: String) -> Result<(), ServerFnErr
     use crate::server::AppState;
     use crate::storage::AuthStore;
     use crate::types::{ServerError, SessionIp, User, Username};
+    use axum::http::header::{HeaderValue, SET_COOKIE};
     use axum_client_ip::ClientIp;
-    use tower_cookies::{Cookie, Cookies, cookie::SameSite};
+    use cookie::{Cookie, SameSite};
+    use leptos_axum::ResponseOptions;
 
     // unwrap used here because this is basic plumbing done at initialization
     let app_state: AppState = use_context().expect("Axum state in leptos context");
     let auth_store = app_state.auth_store.clone();
-    let cookies: Cookies = leptos_axum::extract().await?;
+    let response = expect_context::<ResponseOptions>();
     let ClientIp(client_ip) = leptos_axum::extract().await?;
 
     // Strong type for username
@@ -115,14 +115,16 @@ pub async fn login(username: String, password: String) -> Result<(), ServerFnErr
             .same_site(SameSite::Lax)
             .build();
 
-        #[cfg(debug_assertions)] // in debug mode we probably wont have https
+        #[cfg(debug_assertions)] // in debug mode we probably won't have https
         let cookie = Cookie::build(("session_id", session.id.as_str().to_string()))
             .path("/")
             .http_only(true)
             .same_site(SameSite::Lax)
             .build();
 
-        cookies.add(cookie);
+        if let Ok(header_value) = HeaderValue::from_str(&cookie.to_string()) {
+            response.insert_header(SET_COOKIE, header_value);
+        }
 
         leptos_axum::redirect("/");
         Ok(())

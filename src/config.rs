@@ -1,9 +1,12 @@
 use std::sync::LazyLock;
 
+use crate::types::Username;
+use cookie::Key;
 use serde::{Deserialize, Serialize};
 use toml::de;
-use tower_cookies::cookie;
-
+/*
+ * Configuration Manager
+ */
 pub static LOCAL_CONF: LazyLock<Config> = LazyLock::new(|| grab_config().expect("bento.toml file"));
 
 #[derive(Deserialize)]
@@ -40,11 +43,11 @@ pub struct Secrets {
 }
 
 #[derive(Clone)]
-pub struct CookieKey(pub cookie::Key);
+pub struct CookieKey(pub Key);
 
 impl CookieKey {
     pub fn generate() -> Self {
-        CookieKey(cookie::Key::generate())
+        CookieKey(Key::generate())
     }
 }
 
@@ -75,15 +78,13 @@ impl Secrets {
 impl Default for Secrets {
     fn default() -> Self {
         Secrets {
-            cookie_key: CookieKey(cookie::Key::from(&[0u8; 64])),
+            cookie_key: CookieKey(Key::from(&[0u8; 64])),
         }
     }
 }
 
 // serde glue for saving cookie key to disk
 use base64::{Engine as _, engine::general_purpose::URL_SAFE as Base64Url};
-
-use crate::types::Username;
 
 impl Serialize for CookieKey {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -102,6 +103,6 @@ impl<'de> Deserialize<'de> for CookieKey {
     {
         let encoded = <String>::deserialize(deserializer)?;
         let bytes: Vec<u8> = Base64Url.decode(&encoded).expect("valid base64 cookie key");
-        Ok(CookieKey(cookie::Key::from(&bytes)))
+        Ok(CookieKey(Key::from(&bytes)))
     }
 }

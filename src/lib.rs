@@ -4,7 +4,7 @@ pub mod server {
     use std::sync::Arc;
     pub type ConcreteAuthStore = super::storage::memstore::MemoryAuthStore;
     use axum::extract::FromRef;
-    use tower_cookies::Key;
+    use cookie::Key;
     // declare which implementation of AuthStore to use
     use leptos::config::LeptosOptions;
 

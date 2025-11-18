@@ -19,7 +19,6 @@ async fn main() {
     use bento::{storage::memstore::MemoryAuthStore, webui};
     use leptos::prelude::*;
     use leptos_axum::{LeptosRoutes, file_and_error_handler, generate_route_list};
-    use tower_cookies::CookieManagerLayer;
     use tower_http::{compression::CompressionLayer, decompression::RequestDecompressionLayer};
     use tracing::{debug, info, warn};
 
@@ -59,7 +58,7 @@ async fn main() {
     let app_state = AppState {
         leptos_options,
         auth_store: auth_store.clone(),
-        cookie_key, // unfortunately axum requires this stay plain; TODO: rewrite cookie-ware
+        cookie_key,
     };
     unsafe {
         // zero out [Secrets] struct so keys don't hang around in memory:
@@ -113,7 +112,6 @@ async fn main() {
         .merge(api)
         .merge(ssr)
         .fallback(file_and_error_handler::<AppState, _>(webui::shell)) // fallback for static files & 404s
-        .layer(CookieManagerLayer::new())
         .layer(RequestDecompressionLayer::new().br(true).gzip(true))
         .layer(CompressionLayer::new().br(true).gzip(true))
         .with_state(app_state)
@@ -123,7 +121,6 @@ async fn main() {
     let app: Router = Router::new()
         .merge(ssr)
         .fallback(file_and_error_handler::<AppState, _>(webui::shell)) // fallback for static files & 404s
-        .layer(CookieManagerLayer::new())
         .layer(RequestDecompressionLayer::new().br(true).gzip(true))
         .layer(CompressionLayer::new().br(true).gzip(true))
         .with_state(app_state)
