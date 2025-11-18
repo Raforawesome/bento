@@ -83,7 +83,7 @@ use crate::types::Session;
 
 #[server]
 // TODO: move to login_screen.rs to colocate code (after commit messages)
-pub async fn login(username: String, password: String) -> Result<Session, ServerFnError> {
+pub async fn login(username: String, password: String) -> Result<(), ServerFnError> {
     // place server-specific use statements within ssr-gated code
     use crate::server::AppState;
     use crate::storage::AuthStore;
@@ -124,7 +124,8 @@ pub async fn login(username: String, password: String) -> Result<Session, Server
 
         cookies.add(cookie);
 
-        Ok(session)
+        leptos_axum::redirect("/");
+        Ok(())
     } else {
         Err(ServerError::InvalidCreds.into())
     }
