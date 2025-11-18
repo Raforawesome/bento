@@ -107,20 +107,15 @@ pub async fn login(username: String, password: String) -> Result<(), ServerFnErr
         let session = auth_store.issue_session(&user.id, session_ip).await?;
 
         // Set the auth cookie
-        #[cfg(not(debug_assertions))]
         let cookie = Cookie::build(("session_id", session.id.as_str().to_string()))
             .path("/")
             .http_only(true)
-            .secure(true)
-            .same_site(SameSite::Lax)
-            .build();
+            .same_site(SameSite::Lax);
 
-        #[cfg(debug_assertions)] // in debug mode we probably won't have https
-        let cookie = Cookie::build(("session_id", session.id.as_str().to_string()))
-            .path("/")
-            .http_only(true)
-            .same_site(SameSite::Lax)
-            .build();
+        #[cfg(not(debug_assertions))]
+        let cookie = cookie.secure(true);
+
+        let cookie = cookie.build();
 
         if let Ok(header_value) = HeaderValue::from_str(&cookie.to_string()) {
             response.insert_header(SET_COOKIE, header_value);
