@@ -28,6 +28,8 @@ build-job: # This job runs in the build stage, which runs first.
     - sudo apk add curl gcc musl-dev
     - echo "Running rustup in silent mode..."
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly --default-host x86_64-unknown-linux-gnu
+    - echo "Installing cargo-leptos..."
+    - cargo install cargo-leptos --locked
     - echo "Attempting release build..."
-    - cargo build
-    - echo build complete
+    - cargo leptos build --release
+    - echo "Build complete."
