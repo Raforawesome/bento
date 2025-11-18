@@ -88,7 +88,7 @@ pub async fn login(username: String, password: String) -> Result<(), ServerFnErr
     use crate::types::{ServerError, SessionIp, User, Username};
     use axum::http::header::{HeaderValue, SET_COOKIE};
     use axum_client_ip::ClientIp;
-    use cookie::{Cookie, SameSite};
+    use axum_extra::extract::cookie::{Cookie, SameSite};
     use leptos_axum::ResponseOptions;
 
     // unwrap used here because this is basic plumbing done at initialization

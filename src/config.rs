@@ -1,7 +1,7 @@
 use std::sync::LazyLock;
 
 use crate::types::Username;
-use cookie::Key;
+use axum_extra::extract::cookie::Key;
 use serde::{Deserialize, Serialize};
 use toml::de;
 /*
