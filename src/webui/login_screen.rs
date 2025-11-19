@@ -1,10 +1,12 @@
 use leptos::{form::ActionForm, prelude::*};
+use leptos_router::hooks::use_navigate;
 
 #[component]
 pub fn LoginScreen() -> impl IntoView {
     let login_action = ServerAction::<Login>::new();
     let pending = login_action.pending();
     let action_value = login_action.value();
+    let navigate = use_navigate();
 
     let has_success = move || matches!(action_value.get().as_ref(), Some(Ok(_)));
     let error_message = move || {
@@ -14,6 +16,13 @@ pub fn LoginScreen() -> impl IntoView {
             .and_then(|res| res.as_ref().err())
             .map(|err| err.to_string())
     };
+
+    // Handle client-side redirect after successful login
+    Effect::new(move |_| {
+        if has_success() {
+            navigate("/", Default::default());
+        }
+    });
 
     view! {
         <div class="min-h-screen bg-base-200 flex items-center justify-center px-4 py-10">
@@ -121,7 +130,8 @@ pub async fn login(username: String, password: String) -> Result<(), ServerFnErr
             response.insert_header(SET_COOKIE, header_value);
         }
 
-        leptos_axum::redirect("/");
+        // note: server-side redirect doesn't work with streaming SSR.
+        // client-side redirect is handled in the [LoginScreen] component via an Effect.
         Ok(())
     } else {
         Err(ServerError::InvalidCreds.into())
