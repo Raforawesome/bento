@@ -1,12 +1,10 @@
 use leptos::{form::ActionForm, prelude::*};
-use leptos_router::hooks::use_navigate;
 
 #[component]
 pub fn LoginScreen() -> impl IntoView {
     let login_action = ServerAction::<Login>::new();
     let pending = login_action.pending();
     let action_value = login_action.value();
-    let navigate = use_navigate();
 
     let has_success = move || matches!(action_value.get().as_ref(), Some(Ok(_)));
     let error_message = move || {
@@ -17,12 +15,17 @@ pub fn LoginScreen() -> impl IntoView {
             .map(|err| err.to_string())
     };
 
-    // Handle client-side redirect after successful login
-    Effect::new(move |_| {
-        if has_success() {
-            navigate("/", Default::default());
-        }
-    });
+    // Handle client-side redirect after successful login with full page reload
+    Effect::watch(
+        move || action_value.get(),
+        move |result, _, _| {
+            if matches!(result.as_ref(), Some(Ok(_))) {
+                // Force a full page reload to ensure session is properly loaded
+                let _ = window().location().set_href("/");
+            }
+        },
+        false,
+    );
 
     view! {
         <div class="min-h-screen bg-base-200 flex items-center justify-center px-4 py-10">
@@ -89,7 +92,6 @@ pub fn LoginScreen() -> impl IntoView {
 }
 
 #[server]
-// TODO: move to login_screen.rs to colocate code (after commit messages)
 pub async fn login(username: String, password: String) -> Result<(), ServerFnError> {
     // place server-specific use statements within ssr-gated code
     use crate::server::AppState;
@@ -106,7 +108,7 @@ pub async fn login(username: String, password: String) -> Result<(), ServerFnErr
     let response = expect_context::<ResponseOptions>();
     let ClientIp(client_ip) = leptos_axum::extract().await?;
 
-    // Strong type for username
+    // strong type for username
     let username = Username(username);
 
     let user: User = auth_store.get_user_by_username(&username).await?;
