@@ -173,7 +173,7 @@ impl AuthStore for MemoryAuthStore {
     }
 
     async fn fetch_session(&self, token: &SessionId) -> Result<Session, AuthError> {
-        debug!(token_len = token.0.len(), "Fetching session");
+        debug!(?token, "Fetching session");
         let session_map = self.sessions.pin();
 
         if let Some(session) = session_map.get(token) {

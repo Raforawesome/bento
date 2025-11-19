@@ -26,7 +26,10 @@ pub struct UserId(pub Uuid);
 pub struct Username(pub String);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PasswordHash(PasswordHashString);
+pub struct PasswordHash(
+    #[cfg(feature = "ssr")] PasswordHashString,
+    #[cfg(not(feature = "ssr"))] String,
+);
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct SessionId(pub String);
@@ -163,26 +166,38 @@ pub enum ServerError {
     Unknown,
 }
 
-#[cfg(feature = "ssr")]
 impl serde::Serialize for PasswordHash {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
-        serializer.serialize_str(self.0.as_str())
+        #[cfg(feature = "ssr")]
+        {
+            serializer.serialize_str(self.0.as_str())
+        }
+        #[cfg(not(feature = "ssr"))]
+        {
+            serializer.serialize_str(&self.0)
+        }
     }
 }
 
-#[cfg(feature = "ssr")]
 impl<'de> serde::Deserialize<'de> for PasswordHash {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        use argon2::password_hash::PasswordHashString;
-        PasswordHashString::new(&s)
-            .map(PasswordHash)
-            .map_err(serde::de::Error::custom)
+        #[cfg(feature = "ssr")]
+        {
+            use argon2::password_hash::PasswordHashString;
+            PasswordHashString::new(&s)
+                .map(PasswordHash)
+                .map_err(serde::de::Error::custom)
+        }
+        #[cfg(not(feature = "ssr"))]
+        {
+            Ok(PasswordHash(s))
+        }
     }
 }
