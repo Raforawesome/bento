@@ -124,7 +124,7 @@ pub async fn login(username: String, password: String) -> Result<(), ServerFnErr
             .same_site(SameSite::Lax);
 
         #[cfg(not(debug_assertions))]
-        let cookie = cookie.secure(true);
+        let cookie = cookie.secure(true); // make cookie secure in release builds
 
         let cookie = cookie.build();
 

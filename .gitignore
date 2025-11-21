@@ -1,5 +1,9 @@
 target/
 .idea/
 .vscode/
+.aiexclude
+.geminiignore
+GEMINI.md
+AGENTS.md
+
 .bento_secrets
-*.md
