@@ -32,6 +32,7 @@ uuid = { version = "1.18.1", features = ["serde", "v7", "js"] }
 wasm-bindgen = { version = "=0.2.103", optional = true }
 
 [features]
+default = ["ssr", "hydrate"]
 hydrate = [
     "leptos/hydrate",
     "dep:console_error_panic_hook",
