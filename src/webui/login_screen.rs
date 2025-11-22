@@ -93,49 +93,35 @@ pub fn LoginScreen() -> impl IntoView {
 
 #[server]
 pub async fn login(username: String, password: String) -> Result<(), ServerFnError> {
-    // place server-specific use statements within ssr-gated code
-    use crate::server::AppState;
-    use crate::storage::AuthStore;
-    use crate::types::{ServerError, SessionIp, User, Username};
+    use crate::webui::authenticate_user;
     use axum::http::header::{HeaderValue, SET_COOKIE};
     use axum_client_ip::ClientIp;
     use axum_extra::extract::cookie::{Cookie, SameSite};
     use leptos_axum::ResponseOptions;
 
-    // unwrap used here because this is basic plumbing done at initialization
-    let app_state: AppState = use_context().expect("Axum state in leptos context");
-    let auth_store = app_state.auth_store.clone();
+    // Extract client IP and response context
     let response = expect_context::<ResponseOptions>();
     let ClientIp(client_ip) = leptos_axum::extract().await?;
 
-    // strong type for username
-    let username = Username(username);
+    // Authenticate user and issue session
+    let session = authenticate_user(&username, &password, client_ip).await?;
 
-    let user: User = auth_store.get_user_by_username(&username).await?;
+    // Set the session cookie
+    let cookie = Cookie::build(("session_id", session.id.as_str().to_string()))
+        .path("/")
+        .http_only(true)
+        .same_site(SameSite::Lax);
 
-    if user.password_hash.verify(&password) {
-        let session_ip = SessionIp(client_ip);
-        let session = auth_store.issue_session(&user.id, session_ip).await?;
+    #[cfg(not(debug_assertions))]
+    let cookie = cookie.secure(true); // make cookie secure in release builds
 
-        // Set the auth cookie
-        let cookie = Cookie::build(("session_id", session.id.as_str().to_string()))
-            .path("/")
-            .http_only(true)
-            .same_site(SameSite::Lax);
+    let cookie = cookie.build();
 
-        #[cfg(not(debug_assertions))]
-        let cookie = cookie.secure(true); // make cookie secure in release builds
-
-        let cookie = cookie.build();
-
-        if let Ok(header_value) = HeaderValue::from_str(&cookie.to_string()) {
-            response.insert_header(SET_COOKIE, header_value);
-        }
-
-        // note: server-side redirect doesn't work with streaming SSR.
-        // client-side redirect is handled in the [LoginScreen] component via an Effect.
-        Ok(())
-    } else {
-        Err(ServerError::InvalidCreds.into())
+    if let Ok(header_value) = HeaderValue::from_str(&cookie.to_string()) {
+        response.insert_header(SET_COOKIE, header_value);
     }
+
+    // note: server-side redirect doesn't work with streaming SSR.
+    // client-side redirect is handled in the [LoginScreen] component via an Effect.
+    Ok(())
 }
