@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="src/webui/public/bento-dark-64.webp" alt="Bento Logo" width="64" height="64">
+  <img src="src/webui/public/bento-dark.svg" alt="Bento Logo" width="64" height="64">
 </div>
 
 # Bento
