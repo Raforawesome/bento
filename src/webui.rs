@@ -178,6 +178,17 @@ pub fn RootView() -> impl IntoView {
     }
 }
 
+#[component]
+pub fn LogoSvg(size: i32) -> impl IntoView {
+    view! {
+        <img
+            class={format!("mx-auto h-{size} w-{size} mb-4 opacity-90 drop-shadow-lg")}
+            src="/bento-dark.svg"
+            alt="Bento logo"
+        />
+    }
+}
+
 /// server function to check if user is authenticated
 #[server]
 pub async fn check_auth() -> Result<bool, AppError> {
