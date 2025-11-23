@@ -18,6 +18,7 @@ leptos_axum = { version = "0.8.6", optional = true }
 leptos_meta = "0.8.5"
 leptos_router = { version = "0.8.9", features = ["nightly"] }
 lucide-leptos = { version = "2.44.0", features = ["all-icons"] }
+getrandom = { version = "0.2", features = ["js"] }
 papaya = { version = "0.2.3", features = ["serde"], optional = true }
 rand = { version = "0.9.2", features = ["os_rng"], optional = true }
 serde = { version = "1.0.228", features = ["derive"] }

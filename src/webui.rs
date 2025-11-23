@@ -9,9 +9,106 @@ use leptos_router::{
     components::{Route, Router, Routes},
     path,
 };
-use lucide_leptos::Bell;
+
+use serde::{Deserialize, Serialize};
+use server_fn::{codec::JsonEncoding, error::ServerFnErrorErr};
 
 use crate::{types::Session, webui::login_screen::LoginScreen};
+
+/// Universal error type that automatically converts from any error.
+///
+/// This type implements `FromServerFnError` and uses downcasting
+/// to provide user-friendly error messages for known error types, while
+/// gracefully handling unknown errors.
+///
+/// No manual `From` implementations are needed - any `std::error::Error` can be
+/// automatically converted using the `?` operator.
+///
+/// ## Example
+/// ```rust
+/// #[server]
+/// pub async fn my_function() -> Result<Data, AppError> {
+///     let user = auth_store.get_user(&id).await?;  // AuthError → AppError
+///     let data = fetch_data().await?;              // Any error → AppError
+///     Ok(data)
+/// }
+/// ```
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AppError(String);
+
+impl AppError {
+    /// Create a new AppError with a custom message
+    pub fn new(message: impl Into<String>) -> Self {
+        Self(message.into())
+    }
+
+    /// Get the error message
+    pub fn message(&self) -> &str {
+        &self.0
+    }
+}
+
+impl FromServerFnError for AppError {
+    type Encoder = JsonEncoding;
+
+    fn from_server_fn_error(value: ServerFnErrorErr) -> Self {
+        Self::new(format!("Server function error: {:?}", value))
+    }
+}
+
+impl std::fmt::Display for AppError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+// Universal error conversion using downcasting for user-friendly messages
+#[cfg(feature = "ssr")]
+impl<E> From<E> for AppError
+where
+    E: std::error::Error + Send + Sync + 'static,
+{
+    fn from(err: E) -> Self {
+        use std::any::Any;
+
+        // Try to downcast to known error types for better messages
+        let err_any: &dyn Any = &err;
+
+        // Check for AuthError
+        if let Some(auth_err) = err_any.downcast_ref::<crate::storage::AuthError>() {
+            use crate::storage::AuthError;
+            return Self::new(match auth_err {
+                AuthError::NotFound => "User not found",
+                AuthError::InvalidSession => "Your session has expired. Please log in again.",
+                AuthError::UserExists => "A user with this username already exists",
+                AuthError::SessionLimitReached => {
+                    "Maximum number of active sessions reached. Please log out of another device."
+                }
+            });
+        }
+
+        // Check for ServerError
+        if let Some(server_err) = err_any.downcast_ref::<crate::types::ServerError>() {
+            use crate::types::ServerError;
+            return Self::new(match server_err {
+                ServerError::InvalidCreds => "Invalid username or password",
+                ServerError::RequestError => "Request error occurred",
+                ServerError::Unknown => "An unknown error occurred",
+            });
+        }
+
+        // Default: convert to string
+        Self::new(err.to_string())
+    }
+}
+
+// Client-side: can't use the generic From impl, so handle ServerFnErrorErr specifically
+#[cfg(not(feature = "ssr"))]
+impl From<ServerFnErrorErr> for AppError {
+    fn from(err: ServerFnErrorErr) -> Self {
+        Self::new(format!("Server function error: {:?}", err))
+    }
+}
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
@@ -83,7 +180,7 @@ pub fn RootView() -> impl IntoView {
 
 /// server function to check if user is authenticated
 #[server]
-pub async fn check_auth() -> Result<bool, ServerFnError> {
+pub async fn check_auth() -> Result<bool, AppError> {
     use crate::server::AppState;
     use crate::storage::AuthStore;
     use crate::types::SessionId;
@@ -111,10 +208,10 @@ async fn authenticate_user(
     username: &str,
     password: &str,
     client_ip: std::net::IpAddr,
-) -> Result<Session, ServerFnError> {
+) -> Result<Session, AppError> {
     use crate::server::AppState;
     use crate::storage::AuthStore;
-    use crate::types::{ServerError, SessionIp, Username};
+    use crate::types::{SessionIp, Username};
 
     let app_state: AppState = use_context().expect("Axum state in leptos context");
     let auth_store = app_state.auth_store.clone();
@@ -131,7 +228,7 @@ async fn authenticate_user(
         let session = auth_store.issue_session(&user.id, session_ip).await?;
         Ok(session)
     } else {
-        Err(ServerError::InvalidCreds.into())
+        Err(AppError::new("Invalid username or password"))
     }
 }
 
@@ -140,7 +237,7 @@ async fn authenticate_user(
 /// Returns `Some(Session)` if a valid session exists, `None` otherwise.
 /// This is a low-level function - consider using `get_current_user()` for user info.
 #[server]
-pub async fn fetch_session() -> Result<Option<Session>, ServerFnError> {
+pub async fn fetch_session() -> Result<Option<Session>, AppError> {
     use crate::server::AppState;
     use crate::storage::AuthStore;
     use crate::types::SessionId;
@@ -198,7 +295,7 @@ pub struct CurrentUser {
 /// }
 /// ```
 #[server]
-pub async fn get_current_user() -> Result<Option<CurrentUser>, ServerFnError> {
+pub async fn get_current_user() -> Result<Option<CurrentUser>, AppError> {
     use crate::server::AppState;
     use crate::storage::AuthStore;
 

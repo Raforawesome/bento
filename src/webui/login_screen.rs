@@ -1,3 +1,4 @@
+use crate::webui::AppError;
 use leptos::{form::ActionForm, prelude::*};
 
 #[component]
@@ -12,7 +13,7 @@ pub fn LoginScreen() -> impl IntoView {
             .get()
             .as_ref()
             .and_then(|res| res.as_ref().err())
-            .map(|err| err.to_string())
+            .map(|err| err.message().to_string())
     };
 
     // Handle client-side redirect after successful login with full page reload
@@ -92,7 +93,7 @@ pub fn LoginScreen() -> impl IntoView {
 }
 
 #[server]
-pub async fn login(username: String, password: String) -> Result<(), ServerFnError> {
+pub async fn login(username: String, password: String) -> Result<(), AppError> {
     use crate::webui::authenticate_user;
     use axum::http::header::{HeaderValue, SET_COOKIE};
     use axum_client_ip::ClientIp;
