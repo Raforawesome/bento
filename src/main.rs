@@ -20,7 +20,7 @@ async fn main() {
     use leptos::prelude::*;
     use leptos_axum::{LeptosRoutes, file_and_error_handler, generate_route_list};
     use tower_http::{compression::CompressionLayer, decompression::RequestDecompressionLayer};
-    use tracing::{debug, info, warn};
+    use tracing::{debug, error, info, warn};
 
     const ADDR: &str = "0.0.0.0:8000"; // local address to run webserver on
     const MAX_SESSIONS_PER_USER: usize = 5;
@@ -31,7 +31,8 @@ async fn main() {
 
     // set up tracing for logging
     let time_format =
-        time::format_description::parse("[hour]:[minute]:[second].[subsecond digits:2]").unwrap();
+        time::format_description::parse("[hour]:[minute]:[second].[subsecond digits:2]")
+            .expect("Failed to parse time format description.");
     let local_offset = time::UtcOffset::current_local_offset().unwrap_or(time::UtcOffset::UTC);
     let timer = tracing_subscriber::fmt::time::OffsetTime::new(local_offset, time_format);
 
@@ -53,7 +54,13 @@ async fn main() {
     let leptos_routes = generate_route_list(webui::App);
     let leptos_options = leptos_conf.leptos_options;
 
-    let mut local_secrets = config::Secrets::load().expect("secrets file .bento_secrets");
+    let mut local_secrets = match config::Secrets::load() {
+        Ok(secrets) => secrets,
+        Err(e) => {
+            error!("Failed to load secrets file (.bento_secrets): {}", e);
+            return;
+        }
+    };
     let CookieKey(cookie_key) = local_secrets.cookie_key.clone();
     let app_state = AppState {
         leptos_options,
@@ -97,8 +104,13 @@ async fn main() {
     // Register initial auth account
     let app_conf = LOCAL_CONF.as_ref();
     let Admin { username, password } = &app_conf.admin;
-    let pass_hash: PasswordHash =
-        PasswordHash::try_from(password.as_str()).expect("valid password in config");
+    let pass_hash: PasswordHash = match PasswordHash::try_from(password.as_str()) {
+        Ok(hash) => hash,
+        Err(e) => {
+            error!("Failed to create password hash for admin user: {}", e);
+            return;
+        }
+    };
 
     if let Ok(user) = auth_store.create_admin(username, pass_hash).await {
         info!(username = %user.username.0, id = %user.id.0, "Admin user created successfully");
@@ -128,14 +140,24 @@ async fn main() {
 
     // Start the server
     info!("Binding to address: {}", ADDR);
-    let listener = tokio::net::TcpListener::bind(ADDR).await.unwrap();
+    let listener = match tokio::net::TcpListener::bind(ADDR).await {
+        Ok(listener) => listener,
+        Err(e) => {
+            error!("Failed to bind to address {}: {}", ADDR, e);
+            return;
+        }
+    };
     info!("Server started successfully!");
-    axum::serve(
+    if let Err(e) = axum::serve(
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),
     )
     .await
-    .unwrap();
+    {
+        error!("Server failed to run: {}", e);
+        return;
+    }
+
 }
 
 #[cfg(not(feature = "ssr"))]

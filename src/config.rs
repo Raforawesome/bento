@@ -56,7 +56,7 @@ impl Secrets {
         let secrets_path = ".bento_secrets";
         if Path::new(secrets_path).exists() {
             let secrets_str = fs::read_to_string(secrets_path)?;
-            let secrets: Secrets = toml::from_str(&secrets_str).expect("valid secrets file");
+            let secrets: Secrets = toml::from_str(&secrets_str)?;
             Ok(secrets)
         } else {
             // generate new secrets if secrets file doesn't exist
