@@ -1,10 +1,13 @@
-use crate::webui::{LogoSvg, get_current_user};
+use crate::webui::{AppError, CurrentUser, LogoSvg, get_current_user};
 use leptos::prelude::*;
 
 #[component]
 pub fn Home() -> impl IntoView {
+    // Create the user resource once at the top level
+    let user = Resource::new(|| (), |_| get_current_user());
+
     view! {
-        <DashboardPage/>
+        <DashboardPage user/>
     }
 }
 
@@ -19,7 +22,7 @@ pub struct ProjectData {
 }
 
 #[component]
-pub fn DashboardPage() -> impl IntoView {
+pub fn DashboardPage(user: Resource<Result<Option<CurrentUser>, AppError>>) -> impl IntoView {
     // mock data
     let projects = vec![
         ProjectData {
@@ -48,7 +51,6 @@ pub fn DashboardPage() -> impl IntoView {
         },
     ];
 
-    let user = Resource::new(|| (), |_| get_current_user());
     let user_name = move || {
         user.get()
             .map(|res| match res {
@@ -60,7 +62,7 @@ pub fn DashboardPage() -> impl IntoView {
 
     view! {
         <div class="min-h-screen bg-[#13141c] text-white font-sans selection:bg-orange-500/30">
-            <NavBar/>
+            <NavBar user/>
 
             <main class="max-w-7xl mx-auto px-6 py-10">
                 // header section
@@ -85,9 +87,7 @@ pub fn DashboardPage() -> impl IntoView {
 }
 
 #[component]
-fn NavBar() -> impl IntoView {
-    let user = Resource::new(|| (), |_| get_current_user());
-
+fn NavBar(user: Resource<Result<Option<CurrentUser>, AppError>>) -> impl IntoView {
     view! {
         <nav class="flex items-center justify-between px-6 py-4 border-b border-gray-800/60 bg-[#16171f]">
             // Left side: Logo
