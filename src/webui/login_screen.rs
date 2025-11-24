@@ -40,7 +40,7 @@ pub fn LoginScreen() -> impl IntoView {
 
             <div class="relative w-full max-w-md space-y-8 z-10">
                 <div class="text-center">
-                    <LogoSvg size=16 />
+                    <LogoSvg size=16 class="mx-auto mb-4 opacity-90 drop-shadow-lg" />
                     <h1 class="text-3xl font-bold tracking-tight mb-2 text-white">
                         "Sign in to Bento"
                     </h1>

@@ -1,4 +1,4 @@
-use crate::webui::get_current_user;
+use crate::webui::{LogoSvg, get_current_user};
 use leptos::prelude::*;
 
 #[component]
@@ -92,7 +92,8 @@ fn NavBar() -> impl IntoView {
         <nav class="flex items-center justify-between px-6 py-4 border-b border-gray-800/60 bg-[#16171f]">
             // Left side: Logo
             <div class="flex items-center space-x-3">
-                <img src="/bento-dark-64.webp" alt="Bento Logo" class="w-8 h-8 opacity-90" />
+                // <img src="/bento-dark-64.webp" alt="Bento Logo" class="w-8 h-8 opacity-90" />
+                <LogoSvg size=8 />
                 <span class="text-xl font-bold text-white tracking-tight">"Bento"</span>
             </div>
 

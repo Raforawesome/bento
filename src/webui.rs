@@ -179,10 +179,10 @@ pub fn RootView() -> impl IntoView {
 }
 
 #[component]
-pub fn LogoSvg(size: i32) -> impl IntoView {
+pub fn LogoSvg(size: i32, #[prop(optional)] class: Option<&'static str>) -> impl IntoView {
     view! {
         <img
-            class={format!("mx-auto h-{size} w-{size} mb-4 opacity-90 drop-shadow-lg")}
+            class={format!("h-{size} w-{size} {}", class.unwrap_or_default())}
             src="/bento-dark.svg"
             alt="Bento logo"
         />
