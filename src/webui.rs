@@ -330,3 +330,46 @@ pub async fn get_current_user() -> Result<Option<CurrentUser>, AppError> {
         Ok(None)
     }
 }
+
+#[server]
+pub async fn logout() -> Result<(), AppError> {
+    use crate::server::AppState;
+    use crate::storage::AuthStore;
+    use crate::types::SessionId;
+    use axum::http::header::{HeaderValue, SET_COOKIE};
+    use axum_extra::extract::CookieJar;
+    use axum_extra::extract::cookie::{Cookie, SameSite};
+    use leptos_axum::ResponseOptions;
+    use leptos_axum::extract;
+
+    // extract the cookie jar from the request
+    let jar: CookieJar = extract().await?;
+
+    if let Some(cookie) = jar.get("session_id") {
+        let app_state: AppState = use_context().expect("Axum state in leptos context");
+        let auth_store = app_state.auth_store.clone();
+        let session_id = SessionId(cookie.value().to_string());
+
+        // Revoke the session in the store
+        let _ = auth_store.revoke_session(&session_id).await;
+    }
+
+    // Clear the cookie
+    let response = expect_context::<ResponseOptions>();
+    let cookie = Cookie::build(("session_id", ""))
+        .path("/")
+        .http_only(true)
+        .same_site(SameSite::Lax)
+        .max_age(time::Duration::seconds(0));
+
+    #[cfg(not(debug_assertions))]
+    let cookie = cookie.secure(true);
+
+    let cookie = cookie.build();
+
+    if let Ok(header_value) = HeaderValue::from_str(&cookie.to_string()) {
+        response.insert_header(SET_COOKIE, header_value);
+    }
+
+    Ok(())
+}
