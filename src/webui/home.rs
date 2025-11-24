@@ -1,3 +1,4 @@
+use crate::webui::icons::*;
 use crate::webui::{AppError, CurrentUser, LogoSvg, get_current_user};
 use leptos::prelude::*;
 
@@ -100,14 +101,10 @@ fn NavBar(user: Resource<Result<Option<CurrentUser>, AppError>>) -> impl IntoVie
             // Right side: Icons and User Pill
             <div class="flex items-center space-x-5 text-gray-400">
                 <button class="hover:text-white transition p-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                    </svg>
+                    <DocumentIcon class="w-5 h-5" />
                 </button>
                 <button class="hover:text-white transition p-1 mr-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
-                    </svg>
+                    <BellIcon class="w-5 h-5" />
                 </button>
 
                 // User Dropdown - THE PILL
@@ -115,9 +112,7 @@ fn NavBar(user: Resource<Result<Option<CurrentUser>, AppError>>) -> impl IntoVie
                 <div class="flex items-center space-x-3 cursor-pointer transition bg-[#1f2029] hover:bg-[#252630] border border-gray-700/50 rounded-full py-1.5 pl-1.5 pr-4">
                     // fake avatar circle for now (decide on avatar feature later)
                     <div class="w-7 h-7 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center text-xs text-white font-bold border border-gray-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-gray-300">
-                          <path fill-rule="evenodd" d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-7 9a7 7 0 1 1 14 0H3Z" clip-rule="evenodd" />
-                        </svg>
+                        <UserIcon class="w-4 h-4 text-gray-300" />
                     </div>
 
                     {move || {
@@ -132,9 +127,7 @@ fn NavBar(user: Resource<Result<Option<CurrentUser>, AppError>>) -> impl IntoVie
                             }
                         })
                     }}
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3 text-gray-500">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                    </svg>
+                    <ChevronDownIcon class="w-3 h-3 text-gray-500" />
                 </div>
             </div>
         </nav>
@@ -150,9 +143,7 @@ fn NewProjectCard() -> impl IntoView {
             <div class="absolute inset-0 bg-gradient-to-tr from-orange-500/0 via-orange-500/0 to-orange-500/0 group-hover:to-orange-500/5 transition-all duration-500"></div>
 
             <div class="relative z-10 w-14 h-14 bg-[#252630] rounded-full flex items-center justify-center mb-5 text-orange-500 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-black/20">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
+                <PlusIcon class="w-6 h-6" />
             </div>
 
             <h3 class="relative z-10 text-lg font-semibold mb-2 text-gray-200">"New Project"</h3>
@@ -188,24 +179,18 @@ fn ProjectCard(data: ProjectData) -> impl IntoView {
                 // Metrics List
                 <div class="space-y-4">
                     <div class="flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class=icon_class>
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
-                        </svg>
+                        <DatabaseIcon class=icon_class />
                         <span class="text-gray-400 text-sm"><strong class="text-gray-200 font-medium mr-1.5">{data.db_used}</strong> "Storage"</span>
                     </div>
 
                     <div class="flex items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class=icon_class>
-                           <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-                         </svg>
-                         <span class="text-gray-400 text-sm"><strong class="text-gray-200 font-medium mr-1.5">{data.users_count}</strong> "Users"</span>
+                        <LockIcon class=icon_class />
+                        <span class="text-gray-400 text-sm"><strong class="text-gray-200 font-medium mr-1.5">{data.users_count}</strong> "Users"</span>
                     </div>
 
                     <div class="flex items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class=icon_class>
-                           <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0 0 20.25 18V6A2.25 2.25 0 0 0 18 3.75H6A2.25 2.25 0 0 0 3.75 6v12A2.25 2.25 0 0 0 6 20.25Z" />
-                         </svg>
-                         <span class="text-gray-400 text-sm"><strong class="text-gray-200 font-medium mr-1.5">{data.active_connections}</strong> "Connections"</span>
+                        <ChartBarIcon class=icon_class />
+                        <span class="text-gray-400 text-sm"><strong class="text-gray-200 font-medium mr-1.5">{data.active_connections}</strong> "Connections"</span>
                     </div>
                 </div>
             </div>

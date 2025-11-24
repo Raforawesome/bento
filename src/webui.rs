@@ -1,4 +1,5 @@
 pub mod home;
+pub mod icons;
 pub mod login_screen;
 
 use home::Home;
