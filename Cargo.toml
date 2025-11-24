@@ -31,8 +31,8 @@ tracing = { version = "0.1.41", features = ["max_level_debug", "release_max_leve
 tracing-subscriber = { version = "0.3.20", features = ["fmt", "time"] }
 uuid = { version = "1.18.1", features = ["serde", "v7", "js"] }
 wasm-bindgen = { version = "=0.2.103", optional = true }
-redb = "3.1.0"
-bincode = { version = "2.0.1", features = ["serde"] }
+redb = { version = "3.1.0", optional = true }
+bincode = { version = "2.0.1", features = ["serde"], optional = true }
 
 [features]
 default = ["ssr", "hydrate"]
@@ -51,6 +51,8 @@ ssr = [
     "dep:toml",
     "dep:leptos_axum",
     "dep:axum-extra",
+    "dep:redb",
+    "dep:bincode",
     "leptos/ssr",
     "leptos_meta/ssr",
     "leptos_router/ssr",
