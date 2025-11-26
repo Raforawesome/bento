@@ -35,7 +35,6 @@ pub fn grab_config() -> Result<Config, de::Error> {
  * Secrets Manager
  */
 use std::fs;
-use std::path::Path;
 
 #[derive(Deserialize, Serialize)]
 pub struct Secrets {
@@ -51,20 +50,24 @@ impl CookieKey {
     }
 }
 
+// TODO: replace Box<dyn Error> with anyhow::Error
 impl Secrets {
     pub fn load() -> Result<Self, Box<dyn std::error::Error>> {
         let secrets_path = ".bento_secrets";
-        if Path::new(secrets_path).exists() {
-            let secrets_str = fs::read_to_string(secrets_path)?;
-            let secrets: Secrets = toml::from_str(&secrets_str)?;
-            Ok(secrets)
-        } else {
-            // generate new secrets if secrets file doesn't exist
-            let secrets = Secrets {
-                cookie_key: CookieKey::generate(),
-            };
-            secrets.save()?;
-            Ok(secrets)
+        let secrets_str = fs::read_to_string(secrets_path)?;
+        let secrets: Secrets = toml::from_str(&secrets_str)?;
+        Ok(secrets)
+    }
+
+    pub fn load_or_init() -> Result<Self, Box<dyn std::error::Error>> {
+        match Self::load() {
+            Ok(secrets) => Ok(secrets),
+            Err(_) => {
+                tracing::info!("Generating default .bento_secrets file...");
+                let secrets = Self::default();
+                secrets.save()?;
+                Ok(secrets)
+            }
         }
     }
 

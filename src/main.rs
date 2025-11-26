@@ -15,7 +15,10 @@ async fn main() {
     use bento::server::ConcreteAuthStore;
     use bento::storage::AuthStore;
     use bento::types::PasswordHash;
-    use bento::{config, server::AppState};
+    use bento::{
+        config::{self, Secrets},
+        server::AppState,
+    };
     use bento::{storage::memstore::MemoryAuthStore, webui};
     use leptos::prelude::*;
     use leptos_axum::{LeptosRoutes, file_and_error_handler, generate_route_list};
@@ -54,13 +57,10 @@ async fn main() {
     let leptos_routes = generate_route_list(webui::App);
     let leptos_options = leptos_conf.leptos_options;
 
-    let mut local_secrets = match config::Secrets::load() {
-        Ok(secrets) => secrets,
-        Err(e) => {
-            error!("Failed to load secrets file (.bento_secrets): {}", e);
-            return;
-        }
-    };
+    let mut local_secrets = Secrets::load_or_init().unwrap_or_else(|e| {
+        error!("Failed to create secrets file (.bento_secrets): {e}");
+        std::process::exit(1);
+    });
     let CookieKey(cookie_key) = local_secrets.cookie_key.clone();
     let app_state = AppState {
         leptos_options,
@@ -107,7 +107,7 @@ async fn main() {
     let pass_hash: PasswordHash = match PasswordHash::try_from(password.as_str()) {
         Ok(hash) => hash,
         Err(e) => {
-            error!("Failed to create password hash for admin user: {}", e);
+            error!("Failed to create password hash for admin user: {e}");
             return;
         }
     };
@@ -143,7 +143,7 @@ async fn main() {
     let listener = match tokio::net::TcpListener::bind(ADDR).await {
         Ok(listener) => listener,
         Err(e) => {
-            error!("Failed to bind to address {}: {}", ADDR, e);
+            error!("Failed to bind to address {ADDR}: {e}");
             return;
         }
     };
@@ -154,10 +154,9 @@ async fn main() {
     )
     .await
     {
-        error!("Server failed to run: {}", e);
+        error!("Server failed to run: {e}");
         return;
     }
-
 }
 
 #[cfg(not(feature = "ssr"))]
