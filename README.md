@@ -60,5 +60,5 @@ This project would not be possible without the following awesome open-source pro
 - [The Rust Programming Language](https://www.rust-lang.org/)
 - [Axum](https://github.com/tokio-rs/axum) (web server framework)
 - [Leptos](https://leptos.dev/) (frontend framework)
+- [redb](https://github.com/cberner/redb) (embedded data store)
 - [Tailwind CSS](https://tailwindcss.com/) (self-explanatory?)
-- [Lucide](https://lucide.dev/) (icons)
