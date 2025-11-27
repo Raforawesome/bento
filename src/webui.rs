@@ -61,7 +61,7 @@ pub fn App() -> impl IntoView {
 /// root view that dynamically renders LoginScreen or Home based on auth state
 #[component]
 pub fn RootView() -> impl IntoView {
-    let check_auth = Resource::new(|| (), |_| check_auth());
+    let auth_user = Resource::new(|| (), |_| get_current_user());
     let fallback =
         || view! { <div class="min-h-screen flex items-center justify-center">"Loading..."</div> };
 
@@ -69,12 +69,10 @@ pub fn RootView() -> impl IntoView {
 
         <Suspense fallback=fallback>
             {move || {
-                check_auth.get().map(|result| {
+                auth_user.get().map(|result| {
                     match result {
-                        Ok(true) => view! {
-                            <>
-                                <Home />
-                            </>
+                        Ok(Some(user)) => view! {
+                            <Home user=user />
                         }.into_any(),
                         _ => view! { <LoginScreen /> }.into_any(),
                     }
@@ -92,28 +90,6 @@ pub fn LogoSvg(size: i32, #[prop(optional)] class: Option<&'static str>) -> impl
             src="/bento-dark.svg"
             alt="Bento logo"
         />
-    }
-}
-
-/// server function to check if user is authenticated
-#[server]
-pub async fn check_auth() -> Result<bool, AppError> {
-    use crate::server::AppState;
-    use crate::storage::AuthStore;
-    use crate::types::SessionId;
-    use axum_extra::extract::CookieJar;
-    use leptos_axum::extract;
-
-    // extract the cookie jar from the request
-    let jar: CookieJar = extract().await?;
-
-    if let Some(cookie) = jar.get("session_id") {
-        let app_state: AppState = use_context().expect("Axum state in leptos context");
-        let auth_store = app_state.auth_store.clone();
-        let session_id = SessionId(cookie.value().to_string());
-        Ok(auth_store.fetch_session(&session_id).await.is_ok())
-    } else {
-        Ok(false)
     }
 }
 

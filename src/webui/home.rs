@@ -5,12 +5,9 @@ use leptos::form::ActionForm;
 use leptos::prelude::*;
 
 #[component]
-pub fn Home() -> impl IntoView {
-    // Create the user resource once at the top level
-    let user = Resource::new(|| (), |_| get_current_user());
-
+pub fn Home(user: CurrentUser) -> impl IntoView {
     view! {
-        <DashboardPage user/>
+        <DashboardPage user=user.clone()/>
     }
 }
 
@@ -25,7 +22,7 @@ pub struct ProjectData {
 }
 
 #[component]
-pub fn DashboardPage(user: Resource<Result<Option<CurrentUser>, AppError>>) -> impl IntoView {
+pub fn DashboardPage(user: CurrentUser) -> impl IntoView {
     // mock data
     let projects = vec![
         ProjectData {
@@ -54,25 +51,18 @@ pub fn DashboardPage(user: Resource<Result<Option<CurrentUser>, AppError>>) -> i
         },
     ];
 
-    let user_name = move || {
-        user.get()
-            .map(|res| match res {
-                Ok(Some(user_info)) => user_info.username,
-                _ => "Guest".to_string(),
-            })
-            .unwrap_or("Guest".to_string())
-    };
+    let user_name = user.username.clone();
 
     view! {
         <div class="min-h-screen bg-[#13141c] text-white font-sans selection:bg-orange-500/30">
-            <NavBar user/>
+            <NavBar user=user.clone()/>
 
             <main class="max-w-7xl mx-auto px-6 py-10">
                 // header section
                 <div class="mb-10">
                     <h1 class="text-3xl font-bold mb-2 tracking-tight">"Your Projects"</h1>
                     <p class="text-gray-400">
-                        {format!("Welcome back, {}. Manage your projects or create a new one.", user_name())}
+                        {format!("Welcome back, {}. Manage your projects or create a new one.", user_name)}
                     </p>
                 </div>
 
@@ -90,7 +80,7 @@ pub fn DashboardPage(user: Resource<Result<Option<CurrentUser>, AppError>>) -> i
 }
 
 #[component]
-fn NavBar(user: Resource<Result<Option<CurrentUser>, AppError>>) -> impl IntoView {
+fn NavBar(user: CurrentUser) -> impl IntoView {
     let logout_action = ServerAction::<LogoutAction>::new();
     let pending = logout_action.pending();
 
@@ -104,6 +94,8 @@ fn NavBar(user: Resource<Result<Option<CurrentUser>, AppError>>) -> impl IntoVie
         },
         false,
     );
+
+    let username = user.username.clone();
 
     view! {
         <nav class="flex items-center justify-between px-6 py-4 border-b border-gray-800/60 bg-[#16171f]">
@@ -130,18 +122,9 @@ fn NavBar(user: Resource<Result<Option<CurrentUser>, AppError>>) -> impl IntoVie
                         <UserIcon class="w-4 h-4 text-gray-300" />
                     </div>
 
-                    {move || {
-                        user.get().map(|result| {
-                            match result {
-                                Ok(Some(user_info)) => view! {
-                                    <span class="text-sm font-medium text-gray-200">{user_info.username}</span>
-                                }.into_any(),
-                                _ => view! {
-                                    <span class="text-sm font-medium text-gray-200">"Guest"</span>
-                                }.into_any(),
-                            }
-                        })
-                    }}
+                    <span class="text-sm font-medium text-gray-200">
+                        {username}
+                    </span>
                 </div>
 
                 // Logout Button
