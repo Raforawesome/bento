@@ -2,7 +2,7 @@
 #[cfg(feature = "ssr")]
 pub mod server {
     use std::sync::Arc;
-    pub type ConcreteAuthStore = super::storage::memstore::MemoryAuthStore;
+    pub type ConcreteAuthStore = super::storage::redbstore::RedbAuthStore;
     use axum::extract::FromRef;
     use axum_extra::extract::cookie::Key;
     // declare which implementation of AuthStore to use

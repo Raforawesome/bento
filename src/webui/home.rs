@@ -1,5 +1,6 @@
 use crate::webui::icons::*;
 use crate::webui::{AppError, CurrentUser, LogoSvg, get_current_user};
+use leptos::form::ActionForm;
 use leptos::prelude::*;
 
 #[component]
@@ -89,6 +90,20 @@ pub fn DashboardPage(user: Resource<Result<Option<CurrentUser>, AppError>>) -> i
 
 #[component]
 fn NavBar(user: Resource<Result<Option<CurrentUser>, AppError>>) -> impl IntoView {
+    let logout_action = ServerAction::<LogoutAction>::new();
+    let pending = logout_action.pending();
+
+    // Handle redirect after successful logout
+    Effect::watch(
+        move || logout_action.value().get(),
+        move |result, _, _| {
+            if matches!(result.as_ref(), Some(Ok(_))) {
+                let _ = window().location().set_href("/");
+            }
+        },
+        false,
+    );
+
     view! {
         <nav class="flex items-center justify-between px-6 py-4 border-b border-gray-800/60 bg-[#16171f]">
             // Left side: Logo
@@ -98,18 +113,17 @@ fn NavBar(user: Resource<Result<Option<CurrentUser>, AppError>>) -> impl IntoVie
                 <span class="text-xl font-bold text-white tracking-tight">"Bento"</span>
             </div>
 
-            // Right side: Icons and User Pill
+            // Right side: Icons and User Info
             <div class="flex items-center space-x-5 text-gray-400">
                 <button class="hover:text-white transition p-1">
                     <DocumentIcon class="w-5 h-5" />
                 </button>
-                <button class="hover:text-white transition p-1 mr-2">
+                <button class="hover:text-white transition p-1">
                     <BellIcon class="w-5 h-5" />
                 </button>
 
-                // User Dropdown - THE PILL
-                // Wrapped in a rounded-full border container with background
-                <div class="flex items-center space-x-3 cursor-pointer transition bg-[#1f2029] hover:bg-[#252630] border border-gray-700/50 rounded-full py-1.5 pl-1.5 pr-4">
+                // User Pill (display only)
+                <div class="flex items-center space-x-3 bg-[#1f2029] border border-gray-700/50 rounded-full py-1.5 pl-1.5 pr-4">
                     // fake avatar circle for now (decide on avatar feature later)
                     <div class="w-7 h-7 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center text-xs text-white font-bold border border-gray-600">
                         <UserIcon class="w-4 h-4 text-gray-300" />
@@ -127,11 +141,28 @@ fn NavBar(user: Resource<Result<Option<CurrentUser>, AppError>>) -> impl IntoVie
                             }
                         })
                     }}
-                    <ChevronDownIcon class="w-3 h-3 text-gray-500" />
                 </div>
+
+                // Logout Button
+                <ActionForm action=logout_action>
+                    <button
+                        type="submit"
+                        class="flex items-center space-x-2 px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-[#252630] rounded-lg transition"
+                        disabled=move || pending.get()
+                    >
+                        <LogoutIcon class="w-4 h-4" />
+                        <span>{move || if pending.get() { "..." } else { "Logout" }}</span>
+                    </button>
+                </ActionForm>
             </div>
         </nav>
     }
+}
+
+/// Server function for logout - generates LogoutAction type for ActionForm
+#[server]
+pub async fn logout_action() -> Result<(), AppError> {
+    crate::webui::logout().await
 }
 
 #[component]

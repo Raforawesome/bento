@@ -6,4 +6,5 @@ target/
 GEMINI.md
 AGENTS.md
 
+data/
 .bento_secrets

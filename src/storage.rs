@@ -1,4 +1,5 @@
 pub mod memstore;
+pub mod redbstore;
 
 use crate::types::{PasswordHash, Role, Session, SessionId, SessionIp, User, UserId, Username};
 use thiserror::Error;
@@ -13,6 +14,67 @@ pub enum AuthError {
     InvalidSession,
     #[error("Maximum active sessions reached")]
     SessionLimitReached,
+    #[error("Internal error: {0}")]
+    Internal(String),
+}
+
+// Implement From traits for redb error types
+#[cfg(feature = "ssr")]
+impl From<redb::TransactionError> for AuthError {
+    fn from(err: redb::TransactionError) -> Self {
+        AuthError::Internal(err.to_string())
+    }
+}
+
+#[cfg(feature = "ssr")]
+impl From<redb::TableError> for AuthError {
+    fn from(err: redb::TableError) -> Self {
+        AuthError::Internal(err.to_string())
+    }
+}
+
+#[cfg(feature = "ssr")]
+impl From<redb::CommitError> for AuthError {
+    fn from(err: redb::CommitError) -> Self {
+        AuthError::Internal(err.to_string())
+    }
+}
+
+#[cfg(feature = "ssr")]
+impl From<redb::StorageError> for AuthError {
+    fn from(err: redb::StorageError) -> Self {
+        AuthError::Internal(err.to_string())
+    }
+}
+
+#[cfg(feature = "ssr")]
+impl From<redb::DatabaseError> for AuthError {
+    fn from(err: redb::DatabaseError) -> Self {
+        AuthError::Internal(err.to_string())
+    }
+}
+
+// Implement From trait for bincode error types
+#[cfg(feature = "ssr")]
+impl From<bincode::error::EncodeError> for AuthError {
+    fn from(err: bincode::error::EncodeError) -> Self {
+        AuthError::Internal(format!("Serialization error: {}", err))
+    }
+}
+
+#[cfg(feature = "ssr")]
+impl From<bincode::error::DecodeError> for AuthError {
+    fn from(err: bincode::error::DecodeError) -> Self {
+        AuthError::Internal(format!("Deserialization error: {}", err))
+    }
+}
+
+// Implement From trait for tokio JoinError
+#[cfg(feature = "ssr")]
+impl From<tokio::task::JoinError> for AuthError {
+    fn from(err: tokio::task::JoinError) -> Self {
+        AuthError::Internal(format!("Task join error: {}", err))
+    }
 }
 
 pub trait AuthStore: Send + Sync {

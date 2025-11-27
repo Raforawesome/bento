@@ -85,6 +85,7 @@ where
                 AuthError::SessionLimitReached => {
                     "Maximum number of active sessions reached. Please log out of another device."
                 }
+                AuthError::Internal(_) => "An internal error occurred. Please try again later.",
             });
         }
 

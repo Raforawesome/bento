@@ -14,12 +14,13 @@ async fn main() {
     #[cfg(feature = "rest-api")]
     use bento::server::ConcreteAuthStore;
     use bento::storage::AuthStore;
+    use bento::storage::redbstore::RedbAuthStore;
     use bento::types::PasswordHash;
+    use bento::webui;
     use bento::{
         config::{self, Secrets},
         server::AppState,
     };
-    use bento::{storage::memstore::MemoryAuthStore, webui};
     use leptos::prelude::*;
     use leptos_axum::{LeptosRoutes, file_and_error_handler, generate_route_list};
     use tower_http::{compression::CompressionLayer, decompression::RequestDecompressionLayer};
@@ -49,7 +50,13 @@ async fn main() {
     tracing::subscriber::set_global_default(subscriber).expect("Failed to set tracing subscriber");
 
     // initialize the auth store
-    let auth_store = Arc::new(MemoryAuthStore::new(MAX_SESSIONS_PER_USER));
+    // let auth_store = Arc::new(MemoryAuthStore::new(MAX_SESSIONS_PER_USER));
+    // create data directory if it doesn't exist
+    if let Err(e) = std::fs::create_dir_all("data") {
+        error!("Failed to create data directory: {e}");
+        std::process::exit(1);
+    }
+    let auth_store = Arc::new(RedbAuthStore::new("data/auth.db", MAX_SESSIONS_PER_USER).unwrap());
     debug!("Authentication store initialized");
 
     // set up leptos webui
