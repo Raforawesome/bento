@@ -1,4 +1,5 @@
-use crate::webui::{AppError, LogoSvg};
+use crate::types::AppError;
+use crate::webui::LogoSvg;
 use leptos::{form::ActionForm, prelude::*};
 
 #[component]

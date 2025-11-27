@@ -1,5 +1,6 @@
+use crate::types::AppError;
 use crate::webui::icons::*;
-use crate::webui::{AppError, CurrentUser, LogoSvg, get_current_user};
+use crate::webui::{CurrentUser, LogoSvg};
 use leptos::form::ActionForm;
 use leptos::prelude::*;
 
