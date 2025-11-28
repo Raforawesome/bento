@@ -119,9 +119,8 @@ pub fn LoginScreen() -> impl IntoView {
 #[server]
 pub async fn login(username: String, password: String) -> Result<(), AppError> {
     use crate::webui::authenticate_user;
-    use axum::http::header::{HeaderValue, SET_COOKIE};
+    use crate::webui::cookies::set_session_cookie;
     use axum_client_ip::ClientIp;
-    use axum_extra::extract::cookie::{Cookie, SameSite};
     use leptos_axum::ResponseOptions;
 
     // Extract client IP and response context
@@ -132,19 +131,7 @@ pub async fn login(username: String, password: String) -> Result<(), AppError> {
     let session = authenticate_user(&username, &password, client_ip).await?;
 
     // Set the session cookie
-    let cookie = Cookie::build(("session_id", session.id.as_str().to_string()))
-        .path("/")
-        .http_only(true)
-        .same_site(SameSite::Lax);
-
-    #[cfg(not(debug_assertions))]
-    let cookie = cookie.secure(true); // make cookie secure in release builds
-
-    let cookie = cookie.build();
-
-    if let Ok(header_value) = HeaderValue::from_str(&cookie.to_string()) {
-        response.insert_header(SET_COOKIE, header_value);
-    }
+    set_session_cookie(&response, session.id.as_str());
 
     // note: server-side redirect doesn't work with streaming SSR.
     // client-side redirect is handled in the [LoginScreen] component via an Effect.
