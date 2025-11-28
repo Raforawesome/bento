@@ -12,6 +12,8 @@ pub static LOCAL_CONF: LazyLock<Config> = LazyLock::new(|| grab_config().expect(
 #[derive(Deserialize)]
 pub struct Config {
     pub admin: Admin,
+    #[serde(default)]
+    pub server: Server,
 }
 
 impl AsRef<Config> for Config {
@@ -24,6 +26,38 @@ impl AsRef<Config> for Config {
 pub struct Admin {
     pub username: Username,
     pub password: String,
+}
+
+#[derive(Deserialize)]
+pub struct Server {
+    #[serde(default = "default_address")]
+    pub address: String,
+    #[serde(default = "default_port")]
+    pub port: u16,
+}
+
+impl Default for Server {
+    fn default() -> Self {
+        Self {
+            address: default_address(),
+            port: default_port(),
+        }
+    }
+}
+
+impl Server {
+    /// Returns the full socket address string (e.g., "0.0.0.0:8000")
+    pub fn socket_addr(&self) -> String {
+        format!("{}:{}", self.address, self.port)
+    }
+}
+
+fn default_address() -> String {
+    "0.0.0.0".to_string()
+}
+
+fn default_port() -> u16 {
+    8000
 }
 
 pub fn grab_config() -> Result<Config, de::Error> {

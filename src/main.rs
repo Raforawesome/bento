@@ -26,7 +26,6 @@ async fn main() {
     use tower_http::{compression::CompressionLayer, decompression::RequestDecompressionLayer};
     use tracing::{debug, error, info, warn};
 
-    const ADDR: &str = "0.0.0.0:8000"; // local address to run webserver on
     const MAX_SESSIONS_PER_USER: usize = 5;
 
     /*
@@ -146,11 +145,12 @@ async fn main() {
         .layer(ClientIpSource::ConnectInfo.into_extension());
 
     // Start the server
-    info!("Binding to address: {}", ADDR);
-    let listener = match tokio::net::TcpListener::bind(ADDR).await {
+    let server_addr = app_conf.server.socket_addr();
+    info!("Binding to address: {}", server_addr);
+    let listener = match tokio::net::TcpListener::bind(&server_addr).await {
         Ok(listener) => listener,
         Err(e) => {
-            error!("Failed to bind to address {ADDR}: {e}");
+            error!("Failed to bind to address {server_addr}: {e}");
             return;
         }
     };
