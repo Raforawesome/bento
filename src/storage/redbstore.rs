@@ -2,11 +2,12 @@ use redb::{Database, ReadableDatabase, ReadableTable, TableDefinition};
 use serde::{Serialize, de::DeserializeOwned};
 use std::path::Path;
 use std::sync::Arc;
-use time::{Duration, OffsetDateTime};
+use time::OffsetDateTime;
 use tokio::task::spawn_blocking;
 use tracing::{debug, error, trace};
 
 use super::{AuthError, AuthStore};
+use crate::config::SESSION_DURATION;
 use crate::types::{PasswordHash, Role, Session, SessionId, SessionIp, User, UserId, Username};
 
 const USERS_TABLE: TableDefinition<u128, Vec<u8>> = TableDefinition::new("users");
@@ -218,7 +219,7 @@ impl AuthStore for RedbAuthStore {
         spawn_blocking(move || {
             let write_txn = db.begin_write()?;
             let now = OffsetDateTime::now_utc();
-            let expires = now + Duration::hours(1);
+            let expires = now + SESSION_DURATION;
 
             {
                 let mut sessions_table = write_txn.open_table(SESSIONS_TABLE)?;
@@ -329,7 +330,7 @@ impl AuthStore for RedbAuthStore {
         spawn_blocking(move || {
             let write_txn = db.begin_write()?;
             let now = OffsetDateTime::now_utc();
-            let new_expires = now + Duration::hours(1);
+            let new_expires = now + SESSION_DURATION;
 
             {
                 let mut sessions_table = write_txn.open_table(SESSIONS_TABLE)?;

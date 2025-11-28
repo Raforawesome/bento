@@ -3,7 +3,16 @@ use std::sync::LazyLock;
 use crate::types::Username;
 use axum_extra::extract::cookie::Key;
 use serde::{Deserialize, Serialize};
+use time::Duration;
 use toml::de;
+
+/*
+ * Constants
+ */
+
+/// Default session duration (1 hour)
+pub const SESSION_DURATION: Duration = Duration::hours(1);
+
 /*
  * Configuration Manager
  */

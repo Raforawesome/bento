@@ -1,8 +1,9 @@
 use papaya::HashMap;
-use time::{Duration, OffsetDateTime};
+use time::OffsetDateTime;
 use tracing::{debug, trace};
 
 use super::{AuthError, AuthStore};
+use crate::config::SESSION_DURATION;
 use crate::types::{PasswordHash, Role, Session, SessionId, SessionIp, User, UserId, Username};
 
 /// An in-memory auth store designed for non-persistent usage.
@@ -134,7 +135,7 @@ impl AuthStore for MemoryAuthStore {
     async fn issue_session(&self, id: &UserId, ip: SessionIp) -> Result<Session, AuthError> {
         debug!(user_id = %id.0, ip = %ip.0, "Issuing new session");
         let now = OffsetDateTime::now_utc();
-        let expires = now + Duration::hours(1);
+        let expires = now + SESSION_DURATION;
 
         let session_map = self.sessions.pin();
 
@@ -206,7 +207,7 @@ impl AuthStore for MemoryAuthStore {
         if let Some(mut session) = session_map.get(token).cloned() {
             let now = OffsetDateTime::now_utc();
             if session.expires_at > now {
-                let new_expires = now + Duration::hours(1);
+                let new_expires = now + SESSION_DURATION;
                 debug!(
                     user_id = %session.user_id.0,
                     old_expires = %session.expires_at,
