@@ -13,6 +13,8 @@ use crate::types::{PasswordHash, Role, Session, SessionId, SessionIp, User, User
 const USERS_TABLE: TableDefinition<u128, Vec<u8>> = TableDefinition::new("users");
 const USERNAMES_TABLE: TableDefinition<&str, u128> = TableDefinition::new("usernames");
 const SESSIONS_TABLE: TableDefinition<&str, Vec<u8>> = TableDefinition::new("sessions");
+/// Maps user_id (u128) -> Vec<session_id strings> for O(1) session counting
+const USER_SESSIONS_INDEX: TableDefinition<u128, Vec<u8>> = TableDefinition::new("user_sessions");
 
 #[derive(Clone)]
 pub struct RedbAuthStore {
@@ -30,6 +32,7 @@ impl RedbAuthStore {
             let _ = write_txn.open_table(USERS_TABLE)?;
             let _ = write_txn.open_table(USERNAMES_TABLE)?;
             let _ = write_txn.open_table(SESSIONS_TABLE)?;
+            let _ = write_txn.open_table(USER_SESSIONS_INDEX)?;
         }
         write_txn.commit()?;
 
@@ -49,6 +52,64 @@ impl RedbAuthStore {
     fn deserialize<T: DeserializeOwned>(bytes: &[u8]) -> Result<T, AuthError> {
         let (result, _) = bincode::serde::decode_from_slice(bytes, bincode::config::standard())?;
         Ok(result)
+    }
+
+    /// Gets the list of session IDs for a user from the index
+    fn get_user_session_ids(
+        table: &impl ReadableTable<u128, Vec<u8>>,
+        user_id: u128,
+    ) -> Result<Vec<String>, AuthError> {
+        if let Some(bytes) = table.get(user_id)? {
+            Self::deserialize(&bytes.value())
+        } else {
+            Ok(Vec::new())
+        }
+    }
+
+    /// Adds a session ID to the user's session index
+    fn add_session_to_index(
+        table: &mut redb::Table<u128, Vec<u8>>,
+        user_id: u128,
+        session_id: &str,
+    ) -> Result<(), AuthError> {
+        let mut session_ids = Self::get_user_session_ids(table, user_id)?;
+        session_ids.push(session_id.to_string());
+        let bytes = Self::serialize(&session_ids)?;
+        table.insert(user_id, bytes)?;
+        Ok(())
+    }
+
+    /// Removes a session ID from the user's session index
+    fn remove_session_from_index(
+        table: &mut redb::Table<u128, Vec<u8>>,
+        user_id: u128,
+        session_id: &str,
+    ) -> Result<(), AuthError> {
+        let mut session_ids = Self::get_user_session_ids(table, user_id)?;
+        session_ids.retain(|id| id != session_id);
+        if session_ids.is_empty() {
+            table.remove(user_id)?;
+        } else {
+            let bytes = Self::serialize(&session_ids)?;
+            table.insert(user_id, bytes)?;
+        }
+        Ok(())
+    }
+
+    /// Removes a session from both the sessions table and user sessions index.
+    ///
+    /// This is the canonical way to clean up a session, ensuring both the session
+    /// data and the index entry are removed atomically within a transaction.
+    fn remove_session(
+        sessions_table: &mut redb::Table<&str, Vec<u8>>,
+        user_sessions_table: &mut redb::Table<u128, Vec<u8>>,
+        user_id: u128,
+        session_id: &str,
+    ) -> Result<(), AuthError> {
+        sessions_table.remove(session_id)?;
+        Self::remove_session_from_index(user_sessions_table, user_id, session_id)?;
+        trace!(session_id = %session_id, "Session removed");
+        Ok(())
     }
 }
 
@@ -194,10 +255,22 @@ impl AuthStore for RedbAuthStore {
             {
                 let mut users_table = write_txn.open_table(USERS_TABLE)?;
                 let mut usernames_table = write_txn.open_table(USERNAMES_TABLE)?;
+                let mut sessions_table = write_txn.open_table(SESSIONS_TABLE)?;
+                let mut user_sessions_table = write_txn.open_table(USER_SESSIONS_INDEX)?;
 
                 if let Some(user_bytes) = users_table.remove(id.0.as_u128())? {
                     let user: User = Self::deserialize(&user_bytes.value())?;
                     usernames_table.remove(user.username.as_ref())?;
+
+                    // Clean up all sessions for this user
+                    let session_ids =
+                        Self::get_user_session_ids(&user_sessions_table, id.0.as_u128())?;
+                    for session_id in session_ids {
+                        sessions_table.remove(session_id.as_str())?;
+                    }
+                    // Remove the entire index entry for this user
+                    user_sessions_table.remove(id.0.as_u128())?;
+
                     Ok(())
                 } else {
                     Err(AuthError::NotFound)
@@ -224,6 +297,7 @@ impl AuthStore for RedbAuthStore {
             {
                 let mut sessions_table = write_txn.open_table(SESSIONS_TABLE)?;
                 let users_table = write_txn.open_table(USERS_TABLE)?;
+                let mut user_sessions_table = write_txn.open_table(USER_SESSIONS_INDEX)?;
 
                 // Verify user exists
                 if users_table.get(id.0.as_u128())?.is_none() {
@@ -231,22 +305,39 @@ impl AuthStore for RedbAuthStore {
                     return Err(AuthError::NotFound);
                 }
 
-                // Check session count for this user
-                let mut active_sessions = 0;
+                // Get session IDs from index and count active (non-expired) sessions
+                let session_ids = Self::get_user_session_ids(&user_sessions_table, id.0.as_u128())?;
+                let mut active_count = 0;
+                let mut expired_session_ids = Vec::new();
 
-                for item in sessions_table.iter()? {
-                    let (_token, session_bytes) = item?;
-                    let session: Session = Self::deserialize(&session_bytes.value())?;
-
-                    if session.user_id == id && session.expires_at > now {
-                        active_sessions += 1;
+                for session_id in &session_ids {
+                    if let Some(session_bytes) = sessions_table.get(session_id.as_str())? {
+                        let session: Session = Self::deserialize(&session_bytes.value())?;
+                        if session.expires_at > now {
+                            active_count += 1;
+                        } else {
+                            expired_session_ids.push(session_id.clone());
+                        }
+                    } else {
+                        // Session in index but not in sessions table - orphaned entry
+                        expired_session_ids.push(session_id.clone());
                     }
                 }
 
-                if active_sessions >= max_sessions {
+                // Clean up expired/orphaned sessions
+                for session_id in &expired_session_ids {
+                    Self::remove_session(
+                        &mut sessions_table,
+                        &mut user_sessions_table,
+                        id.0.as_u128(),
+                        session_id,
+                    )?;
+                }
+
+                if active_count >= max_sessions {
                     debug!(
                         user_id = %id.0,
-                        active_sessions,
+                        active_count,
                         max_sessions,
                         "Maximum active sessions reached"
                     );
@@ -264,6 +355,13 @@ impl AuthStore for RedbAuthStore {
 
                 let session_bytes = Self::serialize(&session)?;
                 sessions_table.insert(session.id.as_str(), session_bytes)?;
+
+                // Add to user sessions index
+                Self::add_session_to_index(
+                    &mut user_sessions_table,
+                    id.0.as_u128(),
+                    session.id.as_str(),
+                )?;
 
                 trace!(
                     user_id = %id.0,
@@ -290,6 +388,7 @@ impl AuthStore for RedbAuthStore {
 
             {
                 let mut sessions_table = write_txn.open_table(SESSIONS_TABLE)?;
+                let mut user_sessions_table = write_txn.open_table(USER_SESSIONS_INDEX)?;
 
                 let session_data = sessions_table
                     .get(token.as_str())?
@@ -304,7 +403,12 @@ impl AuthStore for RedbAuthStore {
                             expired_at = %session.expires_at,
                             "Session expired, removing"
                         );
-                        sessions_table.remove(token.as_str())?;
+                        Self::remove_session(
+                            &mut sessions_table,
+                            &mut user_sessions_table,
+                            session.user_id.0.as_u128(),
+                            token.as_str(),
+                        )?;
                         Err(AuthError::InvalidSession)
                     } else {
                         debug!(session_id = %token.0, "Valid session found");
@@ -334,6 +438,7 @@ impl AuthStore for RedbAuthStore {
 
             {
                 let mut sessions_table = write_txn.open_table(SESSIONS_TABLE)?;
+                let mut user_sessions_table = write_txn.open_table(USER_SESSIONS_INDEX)?;
 
                 let session_data = sessions_table
                     .get(token.as_str())?
@@ -348,7 +453,12 @@ impl AuthStore for RedbAuthStore {
                             expired_at = %session.expires_at,
                             "Session expired, cannot extend"
                         );
-                        sessions_table.remove(token.as_str())?;
+                        Self::remove_session(
+                            &mut sessions_table,
+                            &mut user_sessions_table,
+                            session.user_id.0.as_u128(),
+                            token.as_str(),
+                        )?;
                         Err(AuthError::InvalidSession)
                     } else {
                         session.expires_at = new_expires;
@@ -384,8 +494,21 @@ impl AuthStore for RedbAuthStore {
 
             {
                 let mut sessions_table = write_txn.open_table(SESSIONS_TABLE)?;
+                let mut user_sessions_table = write_txn.open_table(USER_SESSIONS_INDEX)?;
 
-                if sessions_table.remove(token.as_str())?.is_some() {
+                // First get the session to find the user_id
+                let session_data = sessions_table
+                    .get(token.as_str())?
+                    .map(|bytes| bytes.value().to_vec());
+
+                if let Some(session_bytes) = session_data {
+                    let session: Session = Self::deserialize(&session_bytes)?;
+                    Self::remove_session(
+                        &mut sessions_table,
+                        &mut user_sessions_table,
+                        session.user_id.0.as_u128(),
+                        token.as_str(),
+                    )?;
                     debug!(session_id = %token.0, "Session revoked successfully");
                     Ok(())
                 } else {
