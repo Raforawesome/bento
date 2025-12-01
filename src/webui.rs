@@ -1,10 +1,10 @@
 #[cfg(feature = "ssr")]
 pub mod cookies;
-pub mod home;
 pub mod icons;
-pub mod login_screen;
+pub mod screen_home;
+pub mod screen_login;
 
-use home::Home;
+use screen_home::Home;
 
 use leptos::prelude::*;
 use leptos_meta::{MetaTags, Stylesheet, Title, provide_meta_context};
@@ -15,7 +15,7 @@ use leptos_router::{
 
 use crate::{
     types::{AppError, Session},
-    webui::login_screen::LoginScreen,
+    webui::screen_login::LoginScreen,
 };
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
