@@ -84,6 +84,9 @@ fn NavBar(user: CurrentUser) -> impl IntoView {
     let logout_action = ServerAction::<LogoutAction>::new();
     let pending = logout_action.pending();
 
+    // Dropdown open/closed state
+    let (dropdown_open, set_dropdown_open) = signal(false);
+
     // Handle redirect after successful logout
     Effect::watch(
         move || logout_action.value().get(),
@@ -115,29 +118,72 @@ fn NavBar(user: CurrentUser) -> impl IntoView {
                     <BellIcon class="w-5 h-5" />
                 </button>
 
-                // User Pill (display only)
-                <div class="flex items-center space-x-3 bg-[#1f2029] border border-gray-700/50 rounded-full py-1.5 pl-1.5 pr-4">
-                    // fake avatar circle for now (decide on avatar feature later)
-                    <div class="w-7 h-7 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center text-xs text-white font-bold border border-gray-600">
-                        <UserIcon class="w-4 h-4 text-gray-300" />
-                    </div>
-
-                    <span class="text-sm font-medium text-gray-200">
-                        {username}
-                    </span>
-                </div>
-
-                // Logout Button
-                <ActionForm action=logout_action>
+                // User Pill Dropdown
+                <div class="relative">
+                    // Dropdown trigger (User Pill)
                     <button
-                        type="submit"
-                        class="flex items-center space-x-2 px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-[#252630] rounded-lg transition"
-                        disabled=move || pending.get()
+                        on:click=move |_| set_dropdown_open.update(|open| *open = !*open)
+                        class="flex items-center space-x-3 bg-[#1f2029] border border-gray-700/50 rounded-full py-1.5 pl-1.5 pr-4 hover:bg-[#252630] hover:border-gray-600 transition cursor-pointer"
                     >
-                        <LogoutIcon class="w-4 h-4" />
-                        <span>{move || if pending.get() { "..." } else { "Logout" }}</span>
+                        // fake avatar circle for now (decide on avatar feature later)
+                        <div class="w-7 h-7 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center text-xs text-white font-bold border border-gray-600">
+                            <UserIcon class="w-4 h-4 text-gray-300" />
+                        </div>
+
+                        <span class="text-sm font-medium text-gray-200">
+                            {username}
+                        </span>
+
+                        // Chevron indicator
+                        <svg
+                            class="w-4 h-4 text-gray-400 transition-transform"
+                            class:rotate-180=move || dropdown_open.get()
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
                     </button>
-                </ActionForm>
+
+                    // Dropdown Menu
+                    <Show when=move || dropdown_open.get()>
+                        // Backdrop to close dropdown when clicking outside
+                        <div
+                            class="fixed inset-0 z-10"
+                            on:click=move |_| set_dropdown_open.set(false)
+                        />
+
+                        // Dropdown content
+                        <div class="absolute right-0 mt-2 w-48 bg-[#1f2029] border border-gray-700/50 rounded-xl shadow-xl shadow-black/30 z-20 overflow-hidden">
+                            // Manage users option
+                            <button
+                                class="flex items-center w-full px-4 py-3 text-sm text-gray-300 hover:bg-[#252630] hover:text-white transition"
+                                on:click=move |_| set_dropdown_open.set(false)
+                            >
+                                <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                </svg>
+                                "Manage Users"
+                            </button>
+
+                            // Divider
+                            <div class="border-t border-gray-700/50" />
+
+                            // Logout option
+                            <ActionForm action=logout_action>
+                                <button
+                                    type="submit"
+                                    class="flex items-center w-full px-4 py-3 text-sm text-gray-300 hover:bg-[#252630] hover:text-white transition"
+                                    disabled=move || pending.get()
+                                >
+                                    <LogoutIcon class="w-4 h-4 mr-3" />
+                                    <span>{move || if pending.get() { "Logging out..." } else { "Logout" }}</span>
+                                </button>
+                            </ActionForm>
+                        </div>
+                    </Show>
+                </div>
             </div>
         </nav>
     }
