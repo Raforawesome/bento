@@ -92,7 +92,7 @@ impl SessionId {
     pub fn new() -> Self {
         use rand::TryRngCore as _;
 
-        let mut buf = [0_u8; 120];
+        let mut buf = [0_u8; 32];
         if OsRng.try_fill_bytes(&mut buf).is_ok() {
             SessionId(Base64Url.encode(buf))
         } else {
