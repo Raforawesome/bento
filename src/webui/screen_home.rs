@@ -1,6 +1,6 @@
 use crate::types::AppError;
 use crate::webui::icons::*;
-use crate::webui::{CurrentUser, LogoSvg};
+use crate::webui::{CurrentUser, LogoSvg, Logout};
 use leptos::form::ActionForm;
 use leptos::prelude::*;
 
@@ -74,7 +74,7 @@ pub fn HomeScreen(user: CurrentUser) -> impl IntoView {
 
 #[component]
 fn NavBar(user: CurrentUser) -> impl IntoView {
-    let logout_action = ServerAction::<LogoutAction>::new();
+    let logout_action = ServerAction::<Logout>::new();
     let pending = logout_action.pending();
 
     // Dropdown open/closed state
@@ -180,12 +180,6 @@ fn NavBar(user: CurrentUser) -> impl IntoView {
             </div>
         </nav>
     }
-}
-
-/// Server function for logout - generates LogoutAction type for ActionForm
-#[server]
-pub async fn logout_action() -> Result<(), AppError> {
-    crate::webui::logout().await
 }
 
 #[component]
