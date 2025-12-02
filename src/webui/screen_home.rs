@@ -10,25 +10,22 @@ pub fn HomeScreen(user: CurrentUser) -> impl IntoView {
     // mock data
     let projects = vec![
         ProjectData {
-            id: 1,
             name: "My Awesome Project".to_string(),
-            project_id: "proj_a1b2c3d4".to_string(),
+            project_id: ProjectId(Uuid::now_v7()),
             db_used: "12.5GB".to_string(),
             users_count: "1,204".to_string(),
             active_connections: "128".to_string(),
         },
         ProjectData {
-            id: 2,
             name: "E-commerce API".to_string(),
-            project_id: "proj_e5f6g7h8".to_string(),
+            project_id: ProjectId(Uuid::now_v7()),
             db_used: "38.2GB".to_string(),
             users_count: "25,890".to_string(),
             active_connections: "1,502".to_string(),
         },
         ProjectData {
-            id: 3,
             name: "Mobile Game Backend".to_string(),
-            project_id: "proj_i9j0k1l2".to_string(),
+            project_id: ProjectId(Uuid::now_v7()),
             db_used: "45.1GB".to_string(),
             users_count: "150,432".to_string(),
             active_connections: "8,912".to_string(),
@@ -55,7 +52,7 @@ pub fn HomeScreen(user: CurrentUser) -> impl IntoView {
                     <NewProjectCard/>
 
                     {projects.into_iter().map(|project| {
-                        view! { <ProjectCard data=project/> }
+                        view! { <ProjectCard data=project /> }
                     }).collect_view()}
                 </div>
             </main>
@@ -210,7 +207,7 @@ fn ProjectCard(data: ProjectData) -> impl IntoView {
                 // Styling the ID slightly smaller and darker
                 <p class="text-gray-500 text-xs font-mono mb-8 flex items-center">
                     <span class="w-2 h-2 rounded-full bg-gray-700 mr-2"></span>
-                    {data.project_id}
+                    {data.project_id.0.to_string()}
                 </p>
 
                 // Metrics List

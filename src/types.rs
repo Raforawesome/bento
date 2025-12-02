@@ -299,3 +299,27 @@ impl<'de> serde::Deserialize<'de> for PasswordHash {
         }
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct ProjectId(pub Uuid);
+
+impl ProjectId {
+    pub fn new() -> Self {
+        ProjectId(Uuid::now_v7())
+    }
+}
+
+impl Default for ProjectId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[derive(Clone, PartialEq)]
+pub struct ProjectData {
+    pub name: String,
+    pub project_id: ProjectId,
+    pub db_used: String,
+    pub users_count: String,
+    pub active_connections: String,
+}
