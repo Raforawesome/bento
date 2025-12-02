@@ -1,17 +1,9 @@
+use crate::types::{ProjectData, ProjectId};
 use crate::webui::icons::*;
 use crate::webui::{CurrentUser, LogoSvg, Logout};
 use leptos::form::ActionForm;
 use leptos::prelude::*;
-
-#[derive(Clone, PartialEq)]
-pub struct ProjectData {
-    pub id: usize, // unique ID for iteration keys
-    pub name: String,
-    pub project_id: String,
-    pub db_used: String,
-    pub users_count: String,
-    pub active_connections: String,
-}
+use uuid::Uuid;
 
 #[component]
 pub fn HomeScreen(user: CurrentUser) -> impl IntoView {
