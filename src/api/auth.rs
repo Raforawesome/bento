@@ -41,6 +41,7 @@ impl From<AuthError> for StatusCode {
             AuthError::NotFound => StatusCode::UNAUTHORIZED,
             AuthError::InvalidSession => StatusCode::FORBIDDEN,
             AuthError::SessionLimitReached => StatusCode::TOO_MANY_REQUESTS,
+            AuthError::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }
