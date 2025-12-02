@@ -4,7 +4,8 @@ pub mod icons;
 pub mod screen_home;
 pub mod screen_login;
 
-use screen_home::Home;
+pub use crate::types::ProjectData;
+use screen_home::HomeScreen;
 
 use leptos::prelude::*;
 use leptos_meta::{MetaTags, Stylesheet, Title, provide_meta_context};
@@ -74,7 +75,7 @@ pub fn RootView() -> impl IntoView {
                 auth_user.get().map(|result| {
                     match result {
                         Ok(Some(user)) => view! {
-                            <Home user=user />
+                            <HomeScreen user=user />
                         }.into_any(),
                         _ => view! { <LoginScreen /> }.into_any(),
                     }

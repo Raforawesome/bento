@@ -4,13 +4,6 @@ use crate::webui::{CurrentUser, LogoSvg};
 use leptos::form::ActionForm;
 use leptos::prelude::*;
 
-#[component]
-pub fn Home(user: CurrentUser) -> impl IntoView {
-    view! {
-        <DashboardPage user=user.clone()/>
-    }
-}
-
 #[derive(Clone, PartialEq)]
 pub struct ProjectData {
     pub id: usize, // unique ID for iteration keys
@@ -22,7 +15,7 @@ pub struct ProjectData {
 }
 
 #[component]
-pub fn DashboardPage(user: CurrentUser) -> impl IntoView {
+pub fn HomeScreen(user: CurrentUser) -> impl IntoView {
     // mock data
     let projects = vec![
         ProjectData {
