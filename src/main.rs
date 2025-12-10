@@ -14,7 +14,8 @@ async fn main() {
     #[cfg(feature = "rest-api")]
     use bento::server::ConcreteAuthStore;
     use bento::storage::AuthStore;
-    use bento::storage::redbstore::RedbAuthStore;
+    use bento::storage::redb_authstore::RedbAuthStore;
+    use bento::storage::redb_projectstore::RedbProjectStore;
     use bento::types::PasswordHash;
     use bento::webui;
     use bento::{
@@ -58,6 +59,9 @@ async fn main() {
     let auth_store = Arc::new(RedbAuthStore::new("data/auth.db", MAX_SESSIONS_PER_USER).unwrap());
     debug!("Authentication store initialized");
 
+    let project_store = Arc::new(RedbProjectStore::new("data/projects.db").unwrap());
+    debug!("Project store initialized");
+
     // set up leptos webui
     let leptos_conf = get_configuration(None).unwrap();
     let leptos_routes = generate_route_list(webui::App);
@@ -71,6 +75,7 @@ async fn main() {
     let app_state = AppState {
         leptos_options,
         auth_store: auth_store.clone(),
+        project_store: project_store.clone(),
         cookie_key,
     };
     unsafe {
