@@ -1,82 +1,21 @@
-pub mod memstore;
-pub mod redbstore;
+//! Storage traits and error types for the Bento application.
+//!
+//! This module defines the `AuthStore` and `ProjectStore` traits that abstract
+//! over different storage backends (memory, redb, etc.).
 
-use crate::types::{PasswordHash, Role, Session, SessionId, SessionIp, User, UserId, Username};
-use thiserror::Error;
+pub mod error;
+pub mod mem_authstore;
+pub mod redb_authstore;
+pub mod redb_projectstore;
 
-#[derive(Debug, Error)]
-pub enum AuthError {
-    #[error("User already exists")]
-    UserExists,
-    #[error("User not found")]
-    NotFound,
-    #[error("Invalid session")]
-    InvalidSession,
-    #[error("Maximum active sessions reached")]
-    SessionLimitReached,
-    #[error("Internal error: {0}")]
-    Internal(String),
-}
+pub use error::{AuthError, ProjectError};
 
-// Implement From traits for redb error types
-#[cfg(feature = "ssr")]
-impl From<redb::TransactionError> for AuthError {
-    fn from(err: redb::TransactionError) -> Self {
-        AuthError::Internal(err.to_string())
-    }
-}
+use crate::types::{
+    PasswordHash, Project, ProjectId, ProjectSummary, Role, Session, SessionId, SessionIp, User,
+    UserId, Username,
+};
 
-#[cfg(feature = "ssr")]
-impl From<redb::TableError> for AuthError {
-    fn from(err: redb::TableError) -> Self {
-        AuthError::Internal(err.to_string())
-    }
-}
-
-#[cfg(feature = "ssr")]
-impl From<redb::CommitError> for AuthError {
-    fn from(err: redb::CommitError) -> Self {
-        AuthError::Internal(err.to_string())
-    }
-}
-
-#[cfg(feature = "ssr")]
-impl From<redb::StorageError> for AuthError {
-    fn from(err: redb::StorageError) -> Self {
-        AuthError::Internal(err.to_string())
-    }
-}
-
-#[cfg(feature = "ssr")]
-impl From<redb::DatabaseError> for AuthError {
-    fn from(err: redb::DatabaseError) -> Self {
-        AuthError::Internal(err.to_string())
-    }
-}
-
-// Implement From trait for bincode error types
-#[cfg(feature = "ssr")]
-impl From<bincode::error::EncodeError> for AuthError {
-    fn from(err: bincode::error::EncodeError) -> Self {
-        AuthError::Internal(format!("Serialization error: {}", err))
-    }
-}
-
-#[cfg(feature = "ssr")]
-impl From<bincode::error::DecodeError> for AuthError {
-    fn from(err: bincode::error::DecodeError) -> Self {
-        AuthError::Internal(format!("Deserialization error: {}", err))
-    }
-}
-
-// Implement From trait for tokio JoinError
-#[cfg(feature = "ssr")]
-impl From<tokio::task::JoinError> for AuthError {
-    fn from(err: tokio::task::JoinError) -> Self {
-        AuthError::Internal(format!("Task join error: {}", err))
-    }
-}
-
+/// Trait for authentication and user session storage.
 pub trait AuthStore: Send + Sync {
     fn max_sessions_per_user(&self) -> usize;
 
@@ -138,4 +77,41 @@ pub trait AuthStore: Send + Sync {
         &self,
         token: &SessionId,
     ) -> impl Future<Output = Result<(), AuthError>> + Send;
+}
+
+/// Trait for project storage operations.
+pub trait ProjectStore: Send + Sync {
+    /// Create a new project for a user
+    fn create_project(
+        &self,
+        owner_id: &UserId,
+        name: String,
+        description: Option<String>,
+    ) -> impl Future<Output = Result<Project, ProjectError>> + Send;
+
+    /// Get a project by ID
+    fn get_project(
+        &self,
+        project_id: &ProjectId,
+    ) -> impl Future<Output = Result<Project, ProjectError>> + Send;
+
+    /// Get all projects owned by a user
+    fn get_user_projects(
+        &self,
+        owner_id: &UserId,
+    ) -> impl Future<Output = Result<Vec<ProjectSummary>, ProjectError>> + Send;
+
+    /// Update a project's name and/or description
+    fn update_project(
+        &self,
+        project_id: &ProjectId,
+        name: Option<String>,
+        description: Option<Option<String>>,
+    ) -> impl Future<Output = Result<Project, ProjectError>> + Send;
+
+    /// Delete a project
+    fn delete_project(
+        &self,
+        project_id: &ProjectId,
+    ) -> impl Future<Output = Result<(), ProjectError>> + Send;
 }
