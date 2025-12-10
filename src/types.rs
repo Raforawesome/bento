@@ -223,7 +223,7 @@ where
     E: std::error::Error + Send + Sync + 'static,
 {
     fn from(err: E) -> Self {
-        use crate::storage::AuthError;
+        use crate::storage::{AuthError, ProjectError};
         use std::any::Any;
 
         // Try to downcast to known error types for better messages
@@ -239,6 +239,16 @@ where
                     "Maximum number of active sessions reached. Please log out of another device."
                 }
                 AuthError::Internal(_) => "An internal error occurred. Please try again later.",
+            });
+        }
+
+        // Check for ProjectError
+        if let Some(project_err) = err_any.downcast_ref::<ProjectError>() {
+            return Self::new(match project_err {
+                ProjectError::NotFound => "Project not found",
+                ProjectError::AlreadyExists => "A project with this name already exists",
+                ProjectError::Unauthorized => "You don't have permission to access this project",
+                ProjectError::Internal(_) => "An internal error occurred. Please try again later.",
             });
         }
 
@@ -315,6 +325,50 @@ impl Default for ProjectId {
     }
 }
 
+/// Represents a user's project stored in the database
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Project {
+    pub id: ProjectId,
+    pub owner_id: UserId,
+    pub name: String,
+    pub description: Option<String>,
+    pub created_at: OffsetDateTime,
+    pub updated_at: OffsetDateTime,
+}
+
+/// Lightweight project summary for listing/display purposes
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProjectSummary {
+    pub id: ProjectId,
+    pub name: String,
+    pub description: Option<String>,
+    pub created_at: OffsetDateTime,
+}
+
+impl From<Project> for ProjectSummary {
+    fn from(project: Project) -> Self {
+        Self {
+            id: project.id,
+            name: project.name,
+            description: project.description,
+            created_at: project.created_at,
+        }
+    }
+}
+
+impl From<&Project> for ProjectSummary {
+    fn from(project: &Project) -> Self {
+        Self {
+            id: project.id,
+            name: project.name.clone(),
+            description: project.description.clone(),
+            created_at: project.created_at,
+        }
+    }
+}
+
+/// Legacy struct for UI display with computed metrics
+/// TODO: Remove once UI is updated to use ProjectSummary
 #[derive(Clone, PartialEq)]
 pub struct ProjectData {
     pub name: String,
