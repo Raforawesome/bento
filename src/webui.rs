@@ -4,7 +4,6 @@ pub mod icons;
 pub mod screen_home;
 pub mod screen_login;
 
-pub use crate::types::ProjectData;
 use screen_home::HomeScreen;
 
 use leptos::prelude::*;
@@ -15,7 +14,7 @@ use leptos_router::{
 };
 
 use crate::{
-    types::{AppError, Session},
+    types::{AppError, Project, ProjectSummary, Session},
     webui::screen_login::LoginScreen,
 };
 
@@ -169,27 +168,6 @@ pub struct CurrentUser {
 ///
 /// Returns `Ok(Some(CurrentUser))` with username and role if authenticated, `Ok(None)` otherwise.
 /// Returns `Err(_)` in the case of an error with the server function call.
-///
-/// # Example Usage
-///
-/// ```rust
-/// let user = Resource::new(|| (), |_| get_current_user());
-///
-/// view! {
-///     <Suspense fallback=|| view! { <p>"Loading..."</p> }>
-///         {move || {
-///             user.get().map(|result| {
-///                 match result {
-///                     Ok(Some(user)) => view! {
-///                         <p>"Welcome, " {&user.username}</p>
-///                     },
-///                     _ => view! { <p>"Not logged in"</p> },
-///                 }
-///             })
-///         }}
-///     </Suspense>
-/// }
-/// ```
 #[server]
 pub async fn get_current_user() -> Result<Option<CurrentUser>, AppError> {
     use crate::server::AppState;
@@ -242,5 +220,159 @@ pub async fn logout() -> Result<(), AppError> {
     let response = expect_context::<ResponseOptions>();
     clear_session_cookie(&response);
 
+    Ok(())
+}
+
+// ==================== Project Server Functions ====================
+
+/// Create a new project for the current authenticated user.
+///
+/// Returns the created project summary on success.
+#[server]
+pub async fn create_project(
+    name: String,
+    description: Option<String>,
+) -> Result<ProjectSummary, AppError> {
+    use crate::server::AppState;
+    use crate::storage::ProjectStore;
+
+    // Get current user session first
+    let session = fetch_session()
+        .await?
+        .ok_or_else(|| AppError::new("Not authenticated"))?;
+
+    let app_state: AppState = use_context().expect("Axum state in leptos context");
+    let project_store = app_state.project_store.clone();
+
+    let project = project_store
+        .create_project(&session.user_id, name, description)
+        .await?;
+
+    Ok(ProjectSummary::from(project))
+}
+
+/// Get all projects owned by the current authenticated user.
+///
+/// Returns a list of project summaries sorted by creation date (newest first).
+#[server]
+pub async fn get_my_projects() -> Result<Vec<ProjectSummary>, AppError> {
+    use crate::server::AppState;
+    use crate::storage::ProjectStore;
+
+    // Get current user session
+    let session = fetch_session()
+        .await?
+        .ok_or_else(|| AppError::new("Not authenticated"))?;
+
+    let app_state: AppState = use_context().expect("Axum state in leptos context");
+    let project_store = app_state.project_store.clone();
+
+    let projects = project_store.get_user_projects(&session.user_id).await?;
+    Ok(projects)
+}
+
+/// Get a specific project by ID.
+///
+/// Returns the full project if the current user owns it.
+#[server]
+pub async fn get_project(project_id: String) -> Result<Project, AppError> {
+    use crate::server::AppState;
+    use crate::storage::ProjectStore;
+    use crate::types::ProjectId;
+    use uuid::Uuid;
+
+    // Get current user session
+    let session = fetch_session()
+        .await?
+        .ok_or_else(|| AppError::new("Not authenticated"))?;
+
+    let app_state: AppState = use_context().expect("Axum state in leptos context");
+    let project_store = app_state.project_store.clone();
+
+    let project_id =
+        ProjectId(Uuid::parse_str(&project_id).map_err(|_| AppError::new("Invalid project ID"))?);
+
+    let project = project_store.get_project(&project_id).await?;
+
+    // Verify ownership
+    if project.owner_id != session.user_id {
+        return Err(AppError::new(
+            "You don't have permission to access this project",
+        ));
+    }
+
+    Ok(project)
+}
+
+/// Update a project's name and/or description.
+///
+/// Only the project owner can update it.
+#[server]
+pub async fn update_project(
+    project_id: String,
+    name: Option<String>,
+    description: Option<Option<String>>,
+) -> Result<Project, AppError> {
+    use crate::server::AppState;
+    use crate::storage::ProjectStore;
+    use crate::types::ProjectId;
+    use uuid::Uuid;
+
+    // Get current user session
+    let session = fetch_session()
+        .await?
+        .ok_or_else(|| AppError::new("Not authenticated"))?;
+
+    let app_state: AppState = use_context().expect("Axum state in leptos context");
+    let project_store = app_state.project_store.clone();
+
+    let project_id =
+        ProjectId(Uuid::parse_str(&project_id).map_err(|_| AppError::new("Invalid project ID"))?);
+
+    // Verify ownership before updating
+    let existing = project_store.get_project(&project_id).await?;
+    if existing.owner_id != session.user_id {
+        return Err(AppError::new(
+            "You don't have permission to update this project",
+        ));
+    }
+
+    let updated = project_store
+        .update_project(&project_id, name, description)
+        .await?;
+
+    Ok(updated)
+}
+
+/// Delete a project by ID.
+///
+/// Only the project owner can delete it.
+#[server]
+pub async fn delete_project(project_id: String) -> Result<(), AppError> {
+    use crate::server::AppState;
+    use crate::storage::ProjectStore;
+    use crate::types::ProjectId;
+    use uuid::Uuid;
+
+    // Get current user session
+    let session = fetch_session()
+        .await?
+        .ok_or_else(|| AppError::new("Not authenticated"))?;
+
+    let app_state: AppState = use_context().expect("Axum state in leptos context");
+    let project_store = app_state.project_store.clone();
+
+    let project_id =
+        ProjectId(Uuid::parse_str(&project_id).map_err(|_| AppError::new("Invalid project ID"))?);
+
+    // Verify ownership before deleting
+    let project = project_store.get_project(&project_id).await?;
+    if project.owner_id != session.user_id {
+        return Err(AppError::new(
+            "You don't have permission to delete this project",
+        ));
+    }
+
+    project_store.delete_project(&project_id).await?;
     Ok(())
 }
