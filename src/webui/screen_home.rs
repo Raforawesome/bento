@@ -65,15 +65,7 @@ pub fn HomeScreen(user: CurrentUser) -> impl IntoView {
                 </div>
 
                 // Grid Layout
-                <Suspense fallback=move || view! {
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <NewProjectCard create_action=create_action />
-                        // Loading skeleton cards
-                        <ProjectCardSkeleton />
-                        <ProjectCardSkeleton />
-                        <ProjectCardSkeleton />
-                    </div>
-                }>
+                <Suspense fallback=ProjectsPlaceholder>
                     {move || {
                         projects_resource.get().map(|result| {
                             match result {
@@ -85,6 +77,7 @@ pub fn HomeScreen(user: CurrentUser) -> impl IntoView {
                                         }).collect_view()}
                                     </div>
                                 }.into_any(),
+
                                 Err(e) => view! {
                                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                         <NewProjectCard create_action=create_action />
@@ -99,6 +92,19 @@ pub fn HomeScreen(user: CurrentUser) -> impl IntoView {
                     }}
                 </Suspense>
             </main>
+        </div>
+    }
+}
+
+#[component]
+fn ProjectsPlaceholder() -> impl IntoView {
+    view! {
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <NewProjectCard create_action=create_action />
+            // Loading skeleton cards
+            <ProjectCardSkeleton />
+            <ProjectCardSkeleton />
+            <ProjectCardSkeleton />
         </div>
     }
 }
