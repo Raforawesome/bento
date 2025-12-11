@@ -3,13 +3,20 @@ use crate::webui::icons::*;
 use crate::webui::{CurrentUser, LogoSvg, Logout, create_project, delete_project, get_my_projects};
 use leptos::prelude::*;
 
+type CreateProjectInput = (String, Option<String>);
+type CreateProjectOutput = Result<ProjectSummary, AppError>;
+type CreateProjectAction = Action<CreateProjectInput, CreateProjectOutput>;
+
+type DeleteProjectOutput = Result<(), AppError>;
+type DeleteProjectAction = Action<String, DeleteProjectOutput>;
+
 #[component]
 pub fn HomeScreen(user: CurrentUser) -> impl IntoView {
     // Resource to fetch projects from the server
     let projects_resource = Resource::new(|| (), |_| get_my_projects());
 
     // Action to create a new project
-    let create_action = Action::new(|(name, description): &(String, Option<String>)| {
+    let create_action = Action::new(|(name, description): &CreateProjectInput| {
         let name = name.clone();
         let description = description.clone();
         async move { create_project(name, description).await }
@@ -202,9 +209,6 @@ fn NavBar(user: CurrentUser) -> impl IntoView {
         </nav>
     }
 }
-
-type CreateProjectAction = Action<(String, Option<String>), Result<ProjectSummary, AppError>>;
-type DeleteProjectAction = Action<String, Result<(), AppError>>;
 
 #[component]
 fn NewProjectCard(create_action: CreateProjectAction) -> impl IntoView {
