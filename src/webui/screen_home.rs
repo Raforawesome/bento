@@ -10,6 +10,15 @@ type CreateProjectAction = Action<CreateProjectInput, CreateProjectOutput>;
 type DeleteProjectOutput = Result<(), AppError>;
 type DeleteProjectAction = Action<String, DeleteProjectOutput>;
 
+// Context type to avoid prop drilling
+#[derive(Clone)]
+struct HomeContext {
+    user: CurrentUser,
+    projects_resource: Resource<Result<Vec<ProjectSummary>, AppError>>,
+    create_action: CreateProjectAction,
+    delete_action: DeleteProjectAction,
+}
+
 #[component]
 pub fn HomeScreen(user: CurrentUser) -> impl IntoView {
     // Resource to fetch projects from the server
@@ -51,9 +60,18 @@ pub fn HomeScreen(user: CurrentUser) -> impl IntoView {
 
     let user_name = user.username.clone();
 
+    // Provide context to child components
+    let context = HomeContext {
+        user: user.clone(),
+        projects_resource,
+        create_action,
+        delete_action,
+    };
+    provide_context(context);
+
     view! {
         <div class="min-h-screen bg-[#13141c] text-white font-sans selection:bg-orange-500/30">
-            <NavBar user=user.clone()/>
+            <NavBar />
 
             <main class="max-w-7xl mx-auto px-6 py-10">
                 // header section
@@ -71,16 +89,16 @@ pub fn HomeScreen(user: CurrentUser) -> impl IntoView {
                             match result {
                                 Ok(projects) => view! {
                                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                        <NewProjectCard create_action=create_action />
+                                        <NewProjectCard />
                                         {projects.into_iter().map(|project| {
-                                            view! { <ProjectCard project=project delete_action=delete_action /> }
+                                            view! { <ProjectCard project=project /> }
                                         }).collect_view()}
                                     </div>
                                 }.into_any(),
 
                                 Err(e) => view! {
                                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                        <NewProjectCard create_action=create_action />
+                                        <NewProjectCard />
                                         <div class="col-span-3 bg-red-900/20 border border-red-800 rounded-2xl p-6 text-red-400">
                                             <p class="font-medium">"Failed to load projects"</p>
                                             <p class="text-sm mt-1">{e.to_string()}</p>
@@ -100,7 +118,7 @@ pub fn HomeScreen(user: CurrentUser) -> impl IntoView {
 fn ProjectsPlaceholder() -> impl IntoView {
     view! {
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <NewProjectCard create_action=create_action />
+            <NewProjectCard />
             // Loading skeleton cards
             <ProjectCardSkeleton />
             <ProjectCardSkeleton />
@@ -110,9 +128,12 @@ fn ProjectsPlaceholder() -> impl IntoView {
 }
 
 #[component]
-fn NavBar(user: CurrentUser) -> impl IntoView {
+fn NavBar() -> impl IntoView {
     let logout_action = ServerAction::<Logout>::new();
     let pending = logout_action.pending();
+
+    // Get context
+    let context = expect_context::<HomeContext>();
 
     // Dropdown open/closed state
     let (dropdown_open, set_dropdown_open) = signal(false);
@@ -128,7 +149,7 @@ fn NavBar(user: CurrentUser) -> impl IntoView {
         false,
     );
 
-    let username = user.username.clone();
+    let username = context.user.username.clone();
 
     view! {
         <nav class="flex items-center justify-between px-6 py-4 border-b border-gray-800/60 bg-[#16171f]">
@@ -217,7 +238,11 @@ fn NavBar(user: CurrentUser) -> impl IntoView {
 }
 
 #[component]
-fn NewProjectCard(create_action: CreateProjectAction) -> impl IntoView {
+fn NewProjectCard() -> impl IntoView {
+    // Get context
+    let context = expect_context::<HomeContext>();
+    let create_action = context.create_action;
+
     let (show_form, set_show_form) = signal(false);
     let (name, set_name) = signal(String::new());
     let (description, set_description) = signal(String::new());
@@ -323,7 +348,11 @@ fn NewProjectCard(create_action: CreateProjectAction) -> impl IntoView {
 }
 
 #[component]
-fn ProjectCard(project: ProjectSummary, delete_action: DeleteProjectAction) -> impl IntoView {
+fn ProjectCard(project: ProjectSummary) -> impl IntoView {
+    // Get context
+    let context = expect_context::<HomeContext>();
+    let delete_action = context.delete_action;
+
     let icon_class = "w-4 h-4 text-gray-600 mr-2.5";
     let project_id = project.id.0.to_string();
     let project_id_for_delete = project_id.clone();
